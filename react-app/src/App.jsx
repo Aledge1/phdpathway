@@ -344,6 +344,15 @@ function statusClass(value) {
   return value.replace(/\s+/g, "-");
 }
 
+function getAuthRedirectUrl() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return new URL("/", window.location.origin).toString();
+  } catch {
+    return window.location.origin;
+  }
+}
+
 export default function App() {
   const [planner, setPlanner] = useState(readState);
   const [selectedProgramId, setSelectedProgramId] = useState(readState().programs[0]?.id || null);
@@ -459,12 +468,21 @@ export default function App() {
 
   async function sendMagicLink() {
     if (!cloudEnabled || !supabase || !cloudEmail.trim()) return;
+    const email = cloudEmail.trim().toLowerCase();
+    const redirectUrl = getAuthRedirectUrl();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      setCloudMessage("Enter a valid email address to receive the sign-in link.");
+      return;
+    }
+
     setCloudBusy(true);
     setCloudMessage("");
     const { error } = await supabase.auth.signInWithOtp({
-      email: cloudEmail.trim(),
+      email,
       options: {
-        emailRedirectTo: window.location.href
+        emailRedirectTo: redirectUrl
       }
     });
     if (error) {
