@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PhD Pathway Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <section id="welcomeBanner" class="welcome-banner">
+        <div>
+          <p class="section-kicker">Welcome</p>
+          <strong>Start here:</strong>
+          <span>Add your shortlist, pick a field preset, and customize the checklist for your cycle.</span>
+        </div>
+        <button id="dismissWelcome" class="ghost-button" type="button">Hide tips</button>
+      </section>
+
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Graduate Admissions Dashboard</p>
+          <h1>Plan PhD applications with deadlines, status tracking, documents, and advisor-fit notes.</h1>
+          <p class="hero-text">
+            Keep programs, recommenders, materials, interviews, and weekly next steps in one place.
+          </p>
+          <div class="hero-actions">
+            <a href="#programs" class="primary-link">Open Planner</a>
+            <a href="#forms" class="secondary-link">Add Program</a>
+          </div>
+        </div>
+
+        <section class="hero-card">
+          <div class="hero-card-top">
+            <div>
+              <p class="section-kicker">Snapshot</p>
+              <h2>Application health</h2>
+            </div>
+            <button id="themeToggle" class="ghost-button" type="button">Dark mode</button>
+          </div>
+          <div class="stat-grid" id="dashboardStats"></div>
+          <div class="progress-block">
+            <div class="progress-copy">
+              <span>Checklist progress</span>
+              <strong id="progressLabel">0%</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <div id="progressBar" class="progress-fill"></div>
+            </div>
+          </div>
+        </section>
+      </header>
+
+      <section class="panel panel-controls" id="programs">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Control Center</p>
+            <h2>Search, filter, sort, and back up your planning data.</h2>
+          </div>
+          <div class="button-row">
+            <button id="exportData" class="ghost-button" type="button">Export data</button>
+            <label class="ghost-button file-trigger" for="importData">Import data</label>
+            <input id="importData" type="file" accept="application/json" hidden />
+            <button id="restoreDefaults" class="ghost-button" type="button">Restore samples</button>
+          </div>
+        </div>
+
+        <div class="control-grid">
+          <label class="search-field wide">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="Search by school, field, faculty, location, or notes..." />
+          </label>
+          <label>
+            <span>Status</span>
+            <select id="statusFilter"></select>
+          </label>
+          <label>
+            <span>Sort</span>
+            <select id="sortSelect">
+              <option value="deadline">Deadline</option>
+              <option value="school">School</option>
+              <option value="status">Status</option>
+            </select>
+          </label>
+          <label>
+            <span>Theme / Fit Tag</span>
+            <div id="tagFilters" class="tag-filters"></div>
+          </label>
+        </div>
+      </section>
+
+      <main class="content-grid">
+        <section class="panel panel-programs">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Program Organizer</p>
+              <h2>Your shortlist</h2>
+            </div>
+            <div class="button-row">
+              <span id="programCount" class="count-pill">0 programs</span>
+              <a href="#forms" class="ghost-button">Add new</a>
+            </div>
+          </div>
+          <div id="programList" class="program-list"></div>
+        </section>
+
+        <aside class="panel panel-detail">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Program Detail</p>
+              <h2>Focused planning view</h2>
+            </div>
+            <button id="deleteProgram" class="danger-button" type="button">Delete</button>
+          </div>
+          <div id="programDetail"></div>
+        </aside>
+
+        <section class="panel panel-timeline">
+          <p class="section-kicker">Deadline Timeline</p>
+          <h2>What needs attention next</h2>
+          <div id="timelineList" class="timeline-list"></div>
+        </section>
+
+        <section class="panel panel-checklist" id="checklist">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Checklist</p>
+              <h2>Application to-dos</h2>
+            </div>
+            <div class="button-row">
+              <span id="checklistCounter" class="count-pill">0 tasks</span>
+              <button id="resetChecklist" class="ghost-button" type="button">Reset progress</button>
+            </div>
+          </div>
+          <div id="checklistList" class="checklist-list"></div>
+        </section>
+
+        <section class="panel panel-documents">
+          <p class="section-kicker">Document Manager</p>
+          <h2>Track core materials</h2>
+          <div id="documentList" class="resource-grid"></div>
+        </section>
+
+        <section class="panel panel-recommenders">
+          <p class="section-kicker">Recommendations</p>
+          <h2>Letter writer tracker</h2>
+          <div id="recommenderList" class="resource-grid"></div>
+        </section>
+
+        <section class="panel panel-advising">
+          <p class="section-kicker">Shared Advising Mode</p>
+          <h2>Mentor review snapshot</h2>
+          <div id="advisorSummary" class="advisor-summary"></div>
+        </section>
+
+        <section class="panel panel-steps">
+          <p class="section-kicker">Next Steps</p>
+          <h2>Where to focus right now</h2>
+          <div class="steps-list">
+            <a class="step-card" href="#forms">
+              <span class="step-number">01</span>
+              <div>
+                <h3>Add or edit programs</h3>
+                <p>Keep your shortlist current with real schools, deadlines, status, and notes.</p>
+              </div>
+            </a>
+            <a class="step-card" href="#checklist">
+              <span class="step-number">02</span>
+              <div>
+                <h3>Customize your checklist</h3>
+                <p>Track tasks like fee waivers, faculty emails, and transcript requests.</p>
+              </div>
+            </a>
+            <a class="step-card" href="#application-strategy">
+              <span class="step-number">03</span>
+              <div>
+                <h3>Research fit and materials</h3>
+                <p>Use the strategy, document, and advisor panels to fill in the missing pieces.</p>
+              </div>
+            </a>
+            <a class="step-card" href="#programs">
+              <span class="step-number">04</span>
+              <div>
+                <h3>Review weekly progress</h3>
+                <p>Sort by deadline, filter by status, and watch the dashboard for blocked applications.</p>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <section class="panel panel-resources" id="application-strategy">
+          <p class="section-kicker">Application Strategy</p>
+          <h2>Build a stronger cycle</h2>
+          <div class="resource-grid">
+            <article>
+              <h3>Research fit</h3>
+              <p>Capture faculty overlap, recent papers, lab culture, and why your project belongs in that department.</p>
+            </article>
+            <article>
+              <h3>Funding review</h3>
+              <p>Track stipend guarantees, tuition remission, health coverage, and summer funding before ranking options.</p>
+            </article>
+            <article>
+              <h3>Interview preparation</h3>
+              <p>Note possible questions, faculty you want to meet, and what success looks like for visit days or interviews.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <section class="panel panel-forms" id="forms">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Add And Edit</p>
+            <h2>Manage programs, tasks, documents, recommenders, and advisor settings.</h2>
+          </div>
+          <label>
+            <span class="toggle-label">Field preset</span>
+            <select id="presetSelect">
+              <option value="">Choose a preset</option>
+              <option value="stem">STEM</option>
+              <option value="humanities">Humanities</option>
+              <option value="social-science">Social science</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="forms-grid">
+          <form id="programForm" class="entry-form">
+            <h3>Program Form</h3>
+            <input id="programId" name="id" type="hidden" />
+            <div class="source-row">
+              <label class="wide">
+                <span>Program website</span>
+                <input name="sourceUrl" type="url" placeholder="https://example.edu/phd-program" />
+              </label>
+              <button id="autofillFromLink" class="ghost-button" type="button">Autofill from link</button>
+            </div>
+            <p class="helper-text">Best effort import: some sites may not expose enough text for auto-fill, so you can still adjust anything manually.</p>
+            <div class="form-grid">
+              <label>
+                <span>School</span>
+                <input name="school" type="text" required />
+              </label>
+              <label>
+                <span>Field</span>
+                <input name="field" type="text" required />
+              </label>
+              <label>
+                <span>Deadline</span>
+                <input name="deadline" type="date" />
+              </label>
+              <label>
+                <span>Status</span>
+                <select name="status">
+                  <option value="not-started">Not started</option>
+                  <option value="researching">Researching</option>
+                  <option value="drafting">Drafting</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="interview">Interview</option>
+                  <option value="decision">Decision received</option>
+                </select>
+              </label>
+              <label>
+                <span>Location</span>
+                <input name="location" type="text" />
+              </label>
+              <label>
+                <span>Funding</span>
+                <input name="funding" type="text" />
+              </label>
+              <label>
+                <span>Tags</span>
+                <input name="tags" type="text" placeholder="STEM, AI, Reach" />
+              </label>
+              <label>
+                <span>Faculty</span>
+                <input name="faculty" type="text" placeholder="Prof. A, Prof. B" />
+              </label>
+            </div>
+            <label>
+              <span>Research fit notes</span>
+              <textarea name="fit" rows="3"></textarea>
+            </label>
+            <label>
+              <span>Program notes</span>
+              <textarea name="notes" rows="3"></textarea>
+            </label>
+            <label>
+              <span>Interview notes</span>
+              <textarea name="interviewNotes" rows="2"></textarea>
+            </label>
+            <div class="button-row left">
+              <button class="primary-link form-submit" type="submit">Save Program</button>
+              <button id="clearProgramForm" class="ghost-button" type="button">Clear</button>
+            </div>
+          </form>
+
+          <form id="checklistForm" class="entry-form">
+            <h3>Checklist Form</h3>
+            <input id="taskId" name="id" type="hidden" />
+            <label>
+              <span>Task title</span>
+              <input name="title" type="text" required />
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea name="description" rows="3"></textarea>
+            </label>
+            <label>
+              <span>Priority</span>
+              <select name="priority">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+            <div class="button-row left">
+              <button class="primary-link form-submit" type="submit">Save Task</button>
+              <button id="clearTaskForm" class="ghost-button" type="button">Clear</button>
+            </div>
+          </form>
+
+          <form id="documentForm" class="entry-form">
+            <h3>Document Form</h3>
+            <input id="documentId" name="id" type="hidden" />
+            <label>
+              <span>Document</span>
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              <span>Status</span>
+              <select name="status">
+                <option value="not-started">Not started</option>
+                <option value="drafting">Drafting</option>
+                <option value="review">In review</option>
+                <option value="ready">Ready</option>
+              </select>
+            </label>
+            <label>
+              <span>Notes</span>
+              <textarea name="notes" rows="3"></textarea>
+            </label>
+            <div class="button-row left">
+              <button class="primary-link form-submit" type="submit">Save Document</button>
+              <button id="clearDocumentForm" class="ghost-button" type="button">Clear</button>
+            </div>
+          </form>
+
+          <form id="recommenderForm" class="entry-form">
+            <h3>Recommender Form</h3>
+            <input id="recommenderId" name="id" type="hidden" />
+            <label>
+              <span>Name</span>
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              <span>Status</span>
+              <select name="status">
+                <option value="not-asked">Not asked</option>
+                <option value="requested">Requested</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="submitted">Submitted</option>
+              </select>
+            </label>
+            <label>
+              <span>Notes</span>
+              <textarea name="notes" rows="3"></textarea>
+            </label>
+            <div class="button-row left">
+              <button class="primary-link form-submit" type="submit">Save Recommender</button>
+              <button id="clearRecommenderForm" class="ghost-button" type="button">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <form id="advisorForm" class="entry-form advisor-form">
+          <h3>Advisor Review Settings</h3>
+          <div class="form-grid">
+            <label>
+              <span>Advisor or mentor name</span>
+              <input name="name" type="text" />
+            </label>
+            <label>
+              <span>Meeting cadence</span>
+              <input name="cadence" type="text" placeholder="Weekly on Fridays" />
+            </label>
+          </div>
+          <label>
+            <span>Feedback notes</span>
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+          <div class="button-row left">
+            <button class="primary-link form-submit" type="submit">Save Advisor Notes</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

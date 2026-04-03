@@ -1,0 +1,12 @@
+{
+  "name": "phd-pathway-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A React/Vite PhD application planning app for organizing programs, deadlines, materials, and checklists.",
+  "scripts": {
+    "dev": "npm --prefix react-app run dev -- --host localhost --port 4174",
+    "build": "npm --prefix react-app run build",
+    "preview": "npm --prefix react-app run preview -- --host localhost --port 4174",
+    "static:dev": "npx serve . -l 3000"
+  }
+}
