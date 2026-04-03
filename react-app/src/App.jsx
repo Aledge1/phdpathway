@@ -363,15 +363,6 @@ function formatCloudError(error, action) {
   return `Cloud ${action} failed: ${message}`;
 }
 
-function getAuthRedirectUrl() {
-  if (typeof window === "undefined") return undefined;
-  try {
-    return new URL("/", window.location.origin).toString();
-  } catch {
-    return window.location.origin;
-  }
-}
-
 export default function App() {
   const [planner, setPlanner] = useState(readState);
   const [selectedProgramId, setSelectedProgramId] = useState(readState().programs[0]?.id || null);
@@ -488,7 +479,6 @@ export default function App() {
   async function sendMagicLink() {
     if (!cloudEnabled || !supabase || !cloudEmail.trim()) return;
     const email = cloudEmail.trim().toLowerCase();
-    const redirectUrl = getAuthRedirectUrl();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
@@ -498,16 +488,15 @@ export default function App() {
 
     setCloudBusy(true);
     setCloudMessage("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) {
+        setCloudMessage(formatCloudError(error, "sign-in"));
+      } else {
+        setCloudMessage("Check your email for the sign-in link.");
       }
-    });
-    if (error) {
+    } catch (error) {
       setCloudMessage(formatCloudError(error, "sign-in"));
-    } else {
-      setCloudMessage("Check your email for the sign-in link.");
     }
     setCloudBusy(false);
   }
