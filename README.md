@@ -73,3 +73,7 @@ It includes:
 - import/export
 - field presets
 - dark mode
+
+## Deployment test
+
+This line was added to verify Git-based Vercel redeploys from the `main` branch.
