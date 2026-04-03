@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { cloudEnabled, supabase, supabaseHost } from "./lib/supabase";
+import { cloudEnabled, supabase } from "./lib/supabase";
 
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
+const cloudPaused = true;
 
 const defaultPrograms = [
   {
@@ -397,6 +398,7 @@ export default function App() {
   const [cloudMessage, setCloudMessage] = useState("");
   const [cloudBusy, setCloudBusy] = useState(false);
   const [lastCloudSync, setLastCloudSync] = useState("");
+  const cloudAvailable = cloudEnabled && !cloudPaused;
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(planner));
@@ -408,7 +410,7 @@ export default function App() {
   }, [planner.advisor]);
 
   useEffect(() => {
-    if (!cloudEnabled || !supabase) return undefined;
+    if (!cloudEnabled || !supabase || cloudPaused) return undefined;
 
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
@@ -818,12 +820,12 @@ export default function App() {
             <p className="eyebrow">Cloud Save</p>
             <h2>Sync your planner across devices.</h2>
           </div>
-          <span className={`pill ${cloudEnabled ? "" : "status not-started"}`}>
-            {cloudEnabled ? "Supabase connected" : "Supabase not configured"}
+          <span className={`pill ${cloudAvailable ? "" : "status not-started"}`}>
+            {cloudAvailable ? "Cloud save available" : "Local-only mode"}
           </span>
         </div>
 
-        {cloudEnabled ? (
+        {cloudAvailable ? (
           <div className="cloud-grid">
             <div className="card">
               <h3>{cloudUser ? "Signed in" : "Sign in with email"}</h3>
@@ -870,17 +872,17 @@ export default function App() {
                 Your full planner state is stored as one synced record per account, so loading restores programs,
                 tasks, documents, recommenders, and advisor notes together.
               </p>
-              <p>Supabase host: {supabaseHost || "Unavailable"}</p>
               {cloudMessage ? <p className="cloud-message">{cloudMessage}</p> : null}
             </div>
           </div>
         ) : (
           <div className="card">
-            <h3>Setup required</h3>
+            <h3>Cloud save is paused</h3>
             <p>
-              Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the React app environment, then create the
-              `planner_states` table described in the project README.
+              Your planner still works normally in this browser. Use Export to save a backup file and Import to
+              restore it later or move it to another device.
             </p>
+            <p>We can turn cloud sync back on later once the email delivery setup is ready.</p>
           </div>
         )}
       </section>
