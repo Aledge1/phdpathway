@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cloudEnabled, supabase } from "./lib/supabase";
 
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
@@ -136,10 +137,40 @@ const defaultState = {
   theme: "light"
 };
 
+function normalizePlannerState(parsed) {
+  const programs = Array.isArray(parsed?.programs) ? parsed.programs : defaultPrograms;
+  return {
+    programs: programs.map((program) => ({
+      ...program,
+      fit: program?.fit || "",
+      notes: program?.notes || "",
+      interviewNotes: program?.interviewNotes || "",
+      sourceUrl: program?.sourceUrl || "",
+      funding: program?.funding || "",
+      location: program?.location || "",
+      status: program?.status || "not-started",
+      deadline: program?.deadline || "",
+      tags: Array.isArray(program?.tags) ? program.tags : [],
+      faculty: Array.isArray(program?.faculty) ? program.faculty : [],
+      sourceSummary: Array.isArray(program?.sourceSummary) ? program.sourceSummary : []
+    })),
+    checklist: Array.isArray(parsed?.checklist) ? parsed.checklist : defaultChecklist,
+    checklistState:
+      parsed?.checklistState && typeof parsed.checklistState === "object" ? parsed.checklistState : {},
+    documents: Array.isArray(parsed?.documents) ? parsed.documents : defaultDocuments,
+    recommenders: Array.isArray(parsed?.recommenders) ? parsed.recommenders : defaultRecommenders,
+    advisor:
+      parsed?.advisor && typeof parsed.advisor === "object"
+        ? { ...defaultAdvisor, ...parsed.advisor }
+        : defaultAdvisor,
+    theme: parsed?.theme === "dark" ? "dark" : "light"
+  };
+}
+
 function readState() {
   try {
     const parsed = JSON.parse(localStorage.getItem(storageKey));
-    return parsed || defaultState;
+    return normalizePlannerState(parsed);
   } catch {
     return defaultState;
   }
@@ -342,6 +373,11 @@ export default function App() {
   const [documentForm, setDocumentForm] = useState({ id: "", name: "", status: "not-started", notes: "" });
   const [recommenderForm, setRecommenderForm] = useState({ id: "", name: "", status: "not-asked", notes: "" });
   const [advisorForm, setAdvisorForm] = useState(planner.advisor);
+  const [cloudEmail, setCloudEmail] = useState("");
+  const [cloudUser, setCloudUser] = useState(null);
+  const [cloudMessage, setCloudMessage] = useState("");
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [lastCloudSync, setLastCloudSync] = useState("");
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(planner));
@@ -351,6 +387,27 @@ export default function App() {
   useEffect(() => {
     setAdvisorForm(planner.advisor);
   }, [planner.advisor]);
+
+  useEffect(() => {
+    if (!cloudEnabled || !supabase) return undefined;
+
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setCloudUser(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCloudUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const allTags = ["All", ...new Set(planner.programs.flatMap((program) => program.tags))];
   const filteredPrograms = planner.programs
@@ -398,6 +455,74 @@ export default function App() {
       }
       return next;
     });
+  }
+
+  async function sendMagicLink() {
+    if (!cloudEnabled || !supabase || !cloudEmail.trim()) return;
+    setCloudBusy(true);
+    setCloudMessage("");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cloudEmail.trim(),
+      options: {
+        emailRedirectTo: window.location.href
+      }
+    });
+    if (error) {
+      setCloudMessage(error.message);
+    } else {
+      setCloudMessage("Check your email for the sign-in link.");
+    }
+    setCloudBusy(false);
+  }
+
+  async function saveToCloud() {
+    if (!cloudEnabled || !supabase || !cloudUser) return;
+    setCloudBusy(true);
+    setCloudMessage("");
+    const payload = {
+      user_id: cloudUser.id,
+      state: planner,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from("planner_states").upsert(payload, { onConflict: "user_id" });
+    if (error) {
+      setCloudMessage(error.message);
+    } else {
+      const stamp = new Date().toLocaleString();
+      setLastCloudSync(stamp);
+      setCloudMessage(`Saved to cloud at ${stamp}.`);
+    }
+    setCloudBusy(false);
+  }
+
+  async function loadFromCloud() {
+    if (!cloudEnabled || !supabase || !cloudUser) return;
+    setCloudBusy(true);
+    setCloudMessage("");
+    const { data, error } = await supabase
+      .from("planner_states")
+      .select("state, updated_at")
+      .eq("user_id", cloudUser.id)
+      .maybeSingle();
+    if (error) {
+      setCloudMessage(error.message);
+    } else if (data?.state) {
+      setPlanner(data.state);
+      setSelectedProgramId(data.state.programs?.[0]?.id || null);
+      if (data.updated_at) {
+        setLastCloudSync(new Date(data.updated_at).toLocaleString());
+      }
+      setCloudMessage("Loaded your planner from the cloud.");
+    } else {
+      setCloudMessage("No cloud save found yet for this account.");
+    }
+    setCloudBusy(false);
+  }
+
+  async function signOutCloud() {
+    if (!cloudEnabled || !supabase) return;
+    await supabase.auth.signOut();
+    setCloudMessage("Signed out of cloud save.");
   }
 
   function resetProgramForm() {
@@ -658,6 +783,78 @@ export default function App() {
           </div>
         </section>
       </header>
+
+      <section className="panel cloud-panel">
+        <div className="section-row">
+          <div>
+            <p className="eyebrow">Cloud Save</p>
+            <h2>Sync your planner across devices.</h2>
+          </div>
+          <span className={`pill ${cloudEnabled ? "" : "status not-started"}`}>
+            {cloudEnabled ? "Supabase connected" : "Supabase not configured"}
+          </span>
+        </div>
+
+        {cloudEnabled ? (
+          <div className="cloud-grid">
+            <div className="card">
+              <h3>{cloudUser ? "Signed in" : "Sign in with email"}</h3>
+              <p>
+                {cloudUser
+                  ? `Cloud save is connected for ${cloudUser.email || "this account"}.`
+                  : "Send yourself a magic link to unlock cloud save and load your planner from anywhere."}
+              </p>
+              {!cloudUser ? (
+                <div className="inline-actions">
+                  <input
+                    type="email"
+                    value={cloudEmail}
+                    onChange={(event) => setCloudEmail(event.target.value)}
+                    placeholder="you@example.com"
+                  />
+                  <button className="button primary" type="button" onClick={sendMagicLink} disabled={cloudBusy}>
+                    {cloudBusy ? "Sending..." : "Send sign-in link"}
+                  </button>
+                </div>
+              ) : (
+                <div className="button-row">
+                  <button className="button primary" type="button" onClick={saveToCloud} disabled={cloudBusy}>
+                    {cloudBusy ? "Working..." : "Save to cloud"}
+                  </button>
+                  <button className="button secondary" type="button" onClick={loadFromCloud} disabled={cloudBusy}>
+                    Load from cloud
+                  </button>
+                  <button className="button secondary" type="button" onClick={signOutCloud}>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>Sync status</h3>
+              <p>
+                {lastCloudSync
+                  ? `Last successful cloud sync: ${lastCloudSync}`
+                  : "No cloud sync recorded yet in this browser session."}
+              </p>
+              <p>
+                Your full planner state is stored as one synced record per account, so loading restores programs,
+                tasks, documents, recommenders, and advisor notes together.
+              </p>
+              {cloudMessage ? <p className="cloud-message">{cloudMessage}</p> : null}
+            </div>
+          </div>
+        ) : (
+          <div className="card">
+            <h3>Setup required</h3>
+            <p>
+              Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the React app environment, then create the
+              `planner_states` table described in the project README.
+            </p>
+          </div>
+        )}
+      </section>
 
       <section className="panel controls-panel" id="programs">
         <div className="section-row">

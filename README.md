@@ -77,3 +77,45 @@ It includes:
 ## Deployment test
 
 This line was added to verify Git-based Vercel redeploys from the `main` branch.
+
+## Cloud save setup
+
+The React app now includes a Supabase-based cloud save panel.
+
+Add these environment variables to the `react-app` deployment environment:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Then create this table in Supabase:
+
+```sql
+create table if not exists public.planner_states (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  state jsonb not null,
+  updated_at timestamptz default now()
+);
+```
+
+Recommended row-level security:
+
+```sql
+alter table public.planner_states enable row level security;
+
+create policy "Users can read their own planner state"
+on public.planner_states
+for select
+using (auth.uid() = user_id);
+
+create policy "Users can insert their own planner state"
+on public.planner_states
+for insert
+with check (auth.uid() = user_id);
+
+create policy "Users can update their own planner state"
+on public.planner_states
+for update
+using (auth.uid() = user_id);
+```
+
+For authentication, enable email magic links in Supabase Auth and set the site URL / redirect URL to your deployed Vercel domain.

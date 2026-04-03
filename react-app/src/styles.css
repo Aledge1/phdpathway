@@ -99,7 +99,8 @@ select {
 .content-grid,
 .forms-grid,
 .controls-grid,
-.stats-grid {
+.stats-grid,
+.cloud-grid {
   display: grid;
   gap: 1rem;
 }
@@ -120,6 +121,10 @@ select {
 .controls-grid {
   grid-template-columns: 2fr repeat(3, 1fr);
   align-items: end;
+}
+
+.cloud-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .stats-grid {
@@ -508,6 +513,19 @@ textarea {
   font-size: 0.9rem;
 }
 
+.inline-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.cloud-message {
+  margin-top: 0.8rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .empty-state {
   border: 1px dashed var(--line);
   border-radius: 22px;
@@ -521,7 +539,8 @@ textarea {
   .content-grid,
   .forms-grid,
   .controls-grid,
-  .stats-grid {
+  .stats-grid,
+  .cloud-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -550,7 +569,8 @@ textarea {
   .hero-row,
   .timeline-card,
   .source-row,
-  .form-grid {
+  .form-grid,
+  .inline-actions {
     display: grid;
     grid-template-columns: 1fr;
   }
