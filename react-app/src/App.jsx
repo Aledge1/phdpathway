@@ -507,8 +507,9 @@ export default function App() {
     if (error) {
       setCloudMessage(error.message);
     } else if (data?.state) {
-      setPlanner(data.state);
-      setSelectedProgramId(data.state.programs?.[0]?.id || null);
+      const normalized = normalizePlannerState(data.state);
+      setPlanner(normalized);
+      setSelectedProgramId(normalized.programs?.[0]?.id || null);
       if (data.updated_at) {
         setLastCloudSync(new Date(data.updated_at).toLocaleString());
       }
@@ -671,8 +672,9 @@ export default function App() {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        setPlanner(parsed);
-        setSelectedProgramId(parsed.programs?.[0]?.id || null);
+        const normalized = normalizePlannerState(parsed);
+        setPlanner(normalized);
+        setSelectedProgramId(normalized.programs?.[0]?.id || null);
       } catch {
         window.alert("That file could not be imported.");
       }
