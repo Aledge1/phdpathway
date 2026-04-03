@@ -5,9 +5,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 let supabase = null;
 let cloudEnabled = false;
+let supabaseHost = "";
 
 try {
   if (supabaseUrl && supabaseAnonKey) {
+    supabaseHost = new URL(supabaseUrl).host;
     supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
@@ -19,6 +21,7 @@ try {
 } catch {
   supabase = null;
   cloudEnabled = false;
+  supabaseHost = "";
 }
 
-export { cloudEnabled, supabase };
+export { cloudEnabled, supabase, supabaseHost };

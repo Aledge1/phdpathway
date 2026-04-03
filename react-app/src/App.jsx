@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { cloudEnabled, supabase } from "./lib/supabase";
+import { cloudEnabled, supabase, supabaseHost } from "./lib/supabase";
 
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
@@ -870,6 +870,7 @@ export default function App() {
                 Your full planner state is stored as one synced record per account, so loading restores programs,
                 tasks, documents, recommenders, and advisor notes together.
               </p>
+              <p>Supabase host: {supabaseHost || "Unavailable"}</p>
               {cloudMessage ? <p className="cloud-message">{cloudMessage}</p> : null}
             </div>
           </div>
