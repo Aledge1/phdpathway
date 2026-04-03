@@ -344,6 +344,25 @@ function statusClass(value) {
   return value.replace(/\s+/g, "-");
 }
 
+function formatCloudError(error, action) {
+  const message = error?.message || "Unknown cloud error.";
+  const lowered = message.toLowerCase();
+
+  if (lowered.includes("jwt") || lowered.includes("session")) {
+    return `Your cloud session expired while trying to ${action}. Sign in again, then retry.`;
+  }
+
+  if (lowered.includes("row-level security") || lowered.includes("permission denied")) {
+    return `Cloud ${action} is blocked by Supabase permissions. Re-run the planner_states RLS policies, then try again.`;
+  }
+
+  if (lowered.includes("invalid input syntax") || lowered.includes("uuid")) {
+    return `Cloud ${action} could not match this signed-in user correctly. Sign out, sign back in with the magic link, then retry.`;
+  }
+
+  return `Cloud ${action} failed: ${message}`;
+}
+
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return undefined;
   try {
@@ -486,7 +505,7 @@ export default function App() {
       }
     });
     if (error) {
-      setCloudMessage(error.message);
+      setCloudMessage(formatCloudError(error, "sign-in"));
     } else {
       setCloudMessage("Check your email for the sign-in link.");
     }
@@ -504,7 +523,7 @@ export default function App() {
     };
     const { error } = await supabase.from("planner_states").upsert(payload, { onConflict: "user_id" });
     if (error) {
-      setCloudMessage(error.message);
+      setCloudMessage(formatCloudError(error, "save"));
     } else {
       const stamp = new Date().toLocaleString();
       setLastCloudSync(stamp);
@@ -523,7 +542,7 @@ export default function App() {
       .eq("user_id", cloudUser.id)
       .maybeSingle();
     if (error) {
-      setCloudMessage(error.message);
+      setCloudMessage(formatCloudError(error, "load"));
     } else if (data?.state) {
       const normalized = normalizePlannerState(data.state);
       setPlanner(normalized);
@@ -533,7 +552,7 @@ export default function App() {
       }
       setCloudMessage("Loaded your planner from the cloud.");
     } else {
-      setCloudMessage("No cloud save found yet for this account.");
+      setCloudMessage("No cloud save found yet for this account. Click Save to cloud first, then try loading again.");
     }
     setCloudBusy(false);
   }
