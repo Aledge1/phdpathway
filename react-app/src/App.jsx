@@ -19,6 +19,10 @@ const defaultPrograms = [
     faculty: ["Prof. Ana Rivera", "Prof. Daniel Cho"],
     fit: "Strong for applicants focused on machine learning systems and interdisciplinary computing research.",
     notes: "Needs a sharper paragraph on systems impact and recent research papers.",
+    applicationFee: "$75",
+    greRequired: "Optional",
+    writingSampleRequired: "No",
+    contactEmail: "grad-admissions@mit.edu",
     interviewNotes: "",
     sourceUrl: "",
     sourceSummary: []
@@ -35,6 +39,10 @@ const defaultPrograms = [
     faculty: ["Prof. Nia Freeman", "Prof. Luka Patel"],
     fit: "Excellent for inequality, institutions, and mixed-methods social research.",
     notes: "Compare methods training and placement outcomes.",
+    applicationFee: "$90",
+    greRequired: "No",
+    writingSampleRequired: "Yes",
+    contactEmail: "soc-phd-info@umich.edu",
     interviewNotes: "",
     sourceUrl: "",
     sourceSummary: []
@@ -146,6 +154,10 @@ function normalizePlannerState(parsed) {
       ...program,
       fit: program?.fit || "",
       notes: program?.notes || "",
+      applicationFee: program?.applicationFee || "",
+      greRequired: program?.greRequired || "",
+      writingSampleRequired: program?.writingSampleRequired || "",
+      contactEmail: program?.contactEmail || "",
       interviewNotes: program?.interviewNotes || "",
       sourceUrl: program?.sourceUrl || "",
       funding: program?.funding || "",
@@ -385,6 +397,39 @@ function extractProgramHighlights(text) {
     .map((entry) => entry.slice(0, 180));
 }
 
+function extractRequirementValue(text, patterns) {
+  const line = text
+    .split("\n")
+    .map((entry) => entry.trim())
+    .find((entry) => patterns.some((pattern) => pattern.test(entry)));
+  return line || "";
+}
+
+function extractApplicationFee(text) {
+  const line = extractRequirementValue(text, [/application fee/i, /\$\d{2,3}/]);
+  const amount = line.match(/\$\s?\d{2,3}/)?.[0]?.replace(/\s+/g, "");
+  return amount || "";
+}
+
+function extractGreRequirement(text) {
+  const line = extractRequirementValue(text, [/gre/i]);
+  if (!line) return "";
+  if (/not required|no gre|gre waived|gre optional/i.test(line)) return "Optional";
+  if (/required/i.test(line)) return "Yes";
+  return "Optional";
+}
+
+function extractWritingSampleRequirement(text) {
+  const line = extractRequirementValue(text, [/writing sample/i, /sample of written work/i]);
+  if (!line) return "";
+  if (/not required|no writing sample/i.test(line)) return "No";
+  return "Yes";
+}
+
+function extractContactEmail(text) {
+  return text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
+}
+
 function formatSavedAt(timestamp) {
   if (!timestamp) return "";
   return new Date(timestamp).toLocaleString();
@@ -418,6 +463,7 @@ export default function App() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [sortMode, setSortMode] = useState("deadline");
   const [autofillBusy, setAutofillBusy] = useState(false);
+  const [compareIds, setCompareIds] = useState([]);
 
   const [programForm, setProgramForm] = useState({
     id: "",
@@ -429,6 +475,10 @@ export default function App() {
     status: "not-started",
     location: "",
     funding: "",
+    applicationFee: "",
+    greRequired: "",
+    writingSampleRequired: "",
+    contactEmail: "",
     tags: "",
     faculty: "",
     fit: "",
@@ -490,6 +540,7 @@ export default function App() {
   const plannerSnapshot = JSON.stringify(planner);
   const needsExportReminder = plannerSnapshot !== lastExportSignature;
   const monthlyDeadlines = groupProgramsByMonth(planner.programs);
+  const comparedPrograms = planner.programs.filter((program) => compareIds.includes(program.id));
   const printPrograms = [...planner.programs].sort((left, right) => {
     if (!left.deadline && !right.deadline) return left.school.localeCompare(right.school);
     if (!left.deadline) return 1;
@@ -514,6 +565,7 @@ export default function App() {
       if (!next.programs.some((program) => program.id === selectedProgramId)) {
         setSelectedProgramId(next.programs[0]?.id || null);
       }
+      setCompareIds((currentCompareIds) => currentCompareIds.filter((id) => next.programs.some((program) => program.id === id)));
       return next;
     });
   }
@@ -529,6 +581,10 @@ export default function App() {
       status: "not-started",
       location: "",
       funding: "",
+      applicationFee: "",
+      greRequired: "",
+      writingSampleRequired: "",
+      contactEmail: "",
       tags: "",
       faculty: "",
       fit: "",
@@ -549,6 +605,10 @@ export default function App() {
       status: programForm.status,
       location: programForm.location.trim(),
       funding: programForm.funding.trim(),
+      applicationFee: programForm.applicationFee.trim(),
+      greRequired: programForm.greRequired.trim(),
+      writingSampleRequired: programForm.writingSampleRequired.trim(),
+      contactEmail: programForm.contactEmail.trim(),
       tags: parseList(programForm.tags),
       faculty: parseList(programForm.faculty),
       fit: programForm.fit.trim(),
@@ -638,6 +698,10 @@ export default function App() {
       status: program.status,
       location: program.location || "",
       funding: program.funding || "",
+      applicationFee: program.applicationFee || "",
+      greRequired: program.greRequired || "",
+      writingSampleRequired: program.writingSampleRequired || "",
+      contactEmail: program.contactEmail || "",
       tags: program.tags.join(", "),
       faculty: program.faculty.join(", "),
       fit: program.fit || "",
@@ -664,6 +728,14 @@ export default function App() {
 
   function printSummary() {
     window.print();
+  }
+
+  function toggleCompare(programId) {
+    setCompareIds((current) => {
+      if (current.includes(programId)) return current.filter((id) => id !== programId);
+      if (current.length >= 3) return [...current.slice(1), programId];
+      return [...current, programId];
+    });
   }
 
   function importData(event) {
@@ -738,6 +810,10 @@ export default function App() {
         field: current.field || extractField(result.text) || extractFieldFromTitle(result.text),
         deadline: current.deadline || extractDeadline(result.text),
         funding: current.funding || extractFunding(result.text),
+        applicationFee: current.applicationFee || extractApplicationFee(result.text),
+        greRequired: current.greRequired || extractGreRequirement(result.text),
+        writingSampleRequired: current.writingSampleRequired || extractWritingSampleRequirement(result.text),
+        contactEmail: current.contactEmail || extractContactEmail(result.text),
         location: current.location || extractLocation(result.text),
         tags: current.tags || extractTags(result.text).join(", "),
         faculty: current.faculty || extractFaculty(result.text).join(", "),
@@ -916,6 +992,14 @@ export default function App() {
             <p>Import that file anytime to restore your planner on this device or another one.</p>
           </div>
         </div>
+
+        <div className="compare-toolbar">
+          <div>
+            <p className="eyebrow">Compare</p>
+            <h3>Choose up to 3 programs to compare side by side.</h3>
+          </div>
+          <span className="pill">{compareIds.length}/3 selected</span>
+        </div>
       </section>
 
       <main className="content-grid">
@@ -953,6 +1037,18 @@ export default function App() {
                       </span>
                     ))}
                     <span className="pill urgency">{urgencyLabel(program)}</span>
+                  </div>
+                  <div className="button-row compare-row">
+                    <button
+                      className="button tiny secondary"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleCompare(program.id);
+                      }}
+                    >
+                      {compareIds.includes(program.id) ? "Remove from compare" : "Add to compare"}
+                    </button>
                   </div>
                 </article>
               ))
@@ -1011,6 +1107,10 @@ export default function App() {
               <ul className="detail-list">
                 <li>Faculty fit: {selectedProgram.faculty.join(", ") || "Add faculty names"}</li>
                 <li>Why it fits: {selectedProgram.fit || "Add a fit summary."}</li>
+                <li>Application fee: {selectedProgram.applicationFee || "Not added yet."}</li>
+                <li>GRE required: {selectedProgram.greRequired || "Not added yet."}</li>
+                <li>Writing sample: {selectedProgram.writingSampleRequired || "Not added yet."}</li>
+                <li>Contact email: {selectedProgram.contactEmail || "Not added yet."}</li>
                 <li>Interview notes: {selectedProgram.interviewNotes || "No interview notes yet."}</li>
                 <li>
                   Source:{" "}
@@ -1073,6 +1173,42 @@ export default function App() {
             )}
           </div>
         </aside>
+
+        <section className="panel">
+          <div className="section-row">
+            <div>
+              <p className="eyebrow">Compare View</p>
+              <h2>Side-by-side program comparison</h2>
+            </div>
+            <span className="pill">{comparedPrograms.length ? `${comparedPrograms.length} programs` : "Select programs to compare"}</span>
+          </div>
+          {comparedPrograms.length ? (
+            <div className="compare-grid">
+              {comparedPrograms.map((program) => (
+                <article key={program.id} className="card compare-card">
+                  <div className="section-row">
+                    <div>
+                      <h3>{program.school}</h3>
+                      <p>{program.field}</p>
+                    </div>
+                    <span className={`pill status ${statusClass(program.status)}`}>{statusLabels[program.status]}</span>
+                  </div>
+                  <ul className="detail-list compare-list">
+                    <li>Deadline: {formatDate(program.deadline)}</li>
+                    <li>Funding: {program.funding || "Not added"}</li>
+                    <li>Application fee: {program.applicationFee || "Not added"}</li>
+                    <li>GRE required: {program.greRequired || "Not added"}</li>
+                    <li>Writing sample: {program.writingSampleRequired || "Not added"}</li>
+                    <li>Contact email: {program.contactEmail || "Not added"}</li>
+                    <li>Faculty: {program.faculty.join(", ") || "Not added"}</li>
+                  </ul>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Use “Add to compare” on program cards to build a side-by-side view.</div>
+          )}
+        </section>
 
         <section className="panel">
           <div className="section-row">
@@ -1346,6 +1482,10 @@ export default function App() {
               </label>
               <label className="field"><span>Location</span><input value={programForm.location} onChange={(event) => setProgramForm({ ...programForm, location: event.target.value })} /></label>
               <label className="field"><span>Funding</span><input value={programForm.funding} onChange={(event) => setProgramForm({ ...programForm, funding: event.target.value })} /></label>
+              <label className="field"><span>Application fee</span><input value={programForm.applicationFee} onChange={(event) => setProgramForm({ ...programForm, applicationFee: event.target.value })} placeholder="$75" /></label>
+              <label className="field"><span>GRE required</span><input value={programForm.greRequired} onChange={(event) => setProgramForm({ ...programForm, greRequired: event.target.value })} placeholder="Yes, No, Optional" /></label>
+              <label className="field"><span>Writing sample</span><input value={programForm.writingSampleRequired} onChange={(event) => setProgramForm({ ...programForm, writingSampleRequired: event.target.value })} placeholder="Yes or No" /></label>
+              <label className="field"><span>Contact email</span><input value={programForm.contactEmail} onChange={(event) => setProgramForm({ ...programForm, contactEmail: event.target.value })} placeholder="grad@school.edu" /></label>
               <label className="field"><span>Tags</span><input value={programForm.tags} onChange={(event) => setProgramForm({ ...programForm, tags: event.target.value })} placeholder="STEM, Reach, Funding" /></label>
               <label className="field"><span>Faculty</span><input value={programForm.faculty} onChange={(event) => setProgramForm({ ...programForm, faculty: event.target.value })} placeholder="Prof. A, Prof. B" /></label>
             </div>
