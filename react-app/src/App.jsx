@@ -879,7 +879,7 @@ export default function App() {
       notes: program.notes || "",
       interviewNotes: program.interviewNotes || ""
     });
-    window.location.hash = "forms";
+    window.location.hash = "program-editor";
   }
 
   function exportData() {
@@ -1014,7 +1014,7 @@ export default function App() {
             <a className="button primary" href="#programs">
               Open planner
             </a>
-            <a className="button secondary" href="#forms">
+            <a className="button secondary" href="#program-editor">
               Add program
             </a>
           </div>
@@ -1251,8 +1251,70 @@ export default function App() {
               <p className="eyebrow">Program Organizer</p>
               <h2>Your shortlist</h2>
             </div>
-            <span className="pill">{filteredPrograms.length} programs</span>
+            <div className="button-row">
+              <span className="pill">{filteredPrograms.length} programs</span>
+              <a className="button tiny secondary" href="#program-editor">
+                Add program
+              </a>
+            </div>
           </div>
+          <form className="entry-form inline-form" id="program-editor" onSubmit={handleProgramSubmit}>
+            <div className="section-row">
+              <div>
+                <h3>{programForm.id ? "Edit program" : "Add program"}</h3>
+                <p className="helper-text">Add a school directly here, or paste a program link and autofill the details.</p>
+              </div>
+            </div>
+            <div className="source-row">
+              <label className="field wide">
+                <span>Program website</span>
+                <input
+                  value={programForm.sourceUrl}
+                  onChange={(event) => setProgramForm({ ...programForm, sourceUrl: event.target.value })}
+                  placeholder="https://example.edu/phd-program"
+                />
+              </label>
+              <button className="button secondary" type="button" onClick={autofillFromLink} disabled={autofillBusy}>
+                {autofillBusy ? "Importing..." : "Autofill from link"}
+              </button>
+            </div>
+            <p className="helper-text">Best effort import: some sites expose better information than others, so you can always edit manually.</p>
+            {programForm.sourceSummary?.length ? (
+              <div className="source-summary">
+                {programForm.sourceSummary.map((entry, index) => (
+                  <p key={index}>{entry}</p>
+                ))}
+              </div>
+            ) : null}
+            <div className="form-grid">
+              <label className="field"><span>School</span><input value={programForm.school} onChange={(event) => setProgramForm({ ...programForm, school: event.target.value })} /></label>
+              <label className="field"><span>Field</span><input value={programForm.field} onChange={(event) => setProgramForm({ ...programForm, field: event.target.value })} /></label>
+              <label className="field"><span>Deadline</span><input type="date" value={programForm.deadline} onChange={(event) => setProgramForm({ ...programForm, deadline: event.target.value })} /></label>
+              <label className="field">
+                <span>Status</span>
+                <select value={programForm.status} onChange={(event) => setProgramForm({ ...programForm, status: event.target.value })}>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field"><span>Location</span><input value={programForm.location} onChange={(event) => setProgramForm({ ...programForm, location: event.target.value })} /></label>
+              <label className="field"><span>Funding</span><input value={programForm.funding} onChange={(event) => setProgramForm({ ...programForm, funding: event.target.value })} /></label>
+              <label className="field"><span>Application fee</span><input value={programForm.applicationFee} onChange={(event) => setProgramForm({ ...programForm, applicationFee: event.target.value })} placeholder="$75" /></label>
+              <label className="field"><span>GRE required</span><input value={programForm.greRequired} onChange={(event) => setProgramForm({ ...programForm, greRequired: event.target.value })} placeholder="Yes, No, Optional" /></label>
+              <label className="field"><span>Writing sample</span><input value={programForm.writingSampleRequired} onChange={(event) => setProgramForm({ ...programForm, writingSampleRequired: event.target.value })} placeholder="Yes or No" /></label>
+              <label className="field"><span>Contact email</span><input value={programForm.contactEmail} onChange={(event) => setProgramForm({ ...programForm, contactEmail: event.target.value })} placeholder="grad@school.edu" /></label>
+              <label className="field"><span>Tags</span><input value={programForm.tags} onChange={(event) => setProgramForm({ ...programForm, tags: event.target.value })} placeholder="STEM, Reach, Funding" /></label>
+              <label className="field"><span>Faculty</span><input value={programForm.faculty} onChange={(event) => setProgramForm({ ...programForm, faculty: event.target.value })} placeholder="Prof. A, Prof. B" /></label>
+            </div>
+            <label className="field"><span>Research fit notes</span><textarea rows="3" value={programForm.fit} onChange={(event) => setProgramForm({ ...programForm, fit: event.target.value })} /></label>
+            <label className="field"><span>Program notes</span><textarea rows="3" value={programForm.notes} onChange={(event) => setProgramForm({ ...programForm, notes: event.target.value })} /></label>
+            <label className="field"><span>Interview notes</span><textarea rows="2" value={programForm.interviewNotes} onChange={(event) => setProgramForm({ ...programForm, interviewNotes: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button primary" type="submit">Save program</button>
+              <button className="button secondary" type="button" onClick={resetProgramForm}>Clear</button>
+            </div>
+          </form>
           <div className="stack">
             {filteredPrograms.length ? (
               filteredPrograms.map((program) => (
@@ -1469,6 +1531,23 @@ export default function App() {
               </button>
             </div>
           </div>
+          <form className="entry-form inline-form" onSubmit={handleTaskSubmit}>
+            <h3>{taskForm.id ? "Edit task" : "Add task"}</h3>
+            <label className="field"><span>Task title</span><input value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} /></label>
+            <label className="field"><span>Description</span><textarea rows="3" value={taskForm.description} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></label>
+            <label className="field">
+              <span>Priority</span>
+              <select value={taskForm.priority} onChange={(event) => setTaskForm({ ...taskForm, priority: event.target.value })}>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+            <div className="button-row">
+              <button className="button primary" type="submit">Save task</button>
+              <button className="button secondary" type="button" onClick={() => setTaskForm({ id: "", title: "", description: "", priority: "medium" })}>Clear</button>
+            </div>
+          </form>
           <div className="stack">
             {checklistItems.map((task) => (
               <article key={task.id} className={`card checklist-card${task.done ? " done" : ""}`}>
@@ -1519,6 +1598,23 @@ export default function App() {
         <section className="panel panel-side">
           <p className="eyebrow">Documents</p>
           <h2>Core materials</h2>
+          <form className="entry-form inline-form" onSubmit={handleDocumentSubmit}>
+            <h3>{documentForm.id ? "Edit document" : "Add document"}</h3>
+            <label className="field"><span>Document</span><input value={documentForm.name} onChange={(event) => setDocumentForm({ ...documentForm, name: event.target.value })} /></label>
+            <label className="field">
+              <span>Status</span>
+              <select value={documentForm.status} onChange={(event) => setDocumentForm({ ...documentForm, status: event.target.value })}>
+                {Object.entries(documentLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field"><span>Notes</span><textarea rows="3" value={documentForm.notes} onChange={(event) => setDocumentForm({ ...documentForm, notes: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button primary" type="submit">Save document</button>
+              <button className="button secondary" type="button" onClick={() => setDocumentForm({ id: "", name: "", status: "not-started", notes: "" })}>Clear</button>
+            </div>
+          </form>
           <div className="stack">
             {planner.documents.map((doc) => (
               <article key={doc.id} className="card">
@@ -1554,6 +1650,23 @@ export default function App() {
         <section className="panel panel-side">
           <p className="eyebrow">Recommendations</p>
           <h2>Letter writer tracker</h2>
+          <form className="entry-form inline-form" onSubmit={handleRecommenderSubmit}>
+            <h3>{recommenderForm.id ? "Edit recommender" : "Add recommender"}</h3>
+            <label className="field"><span>Name</span><input value={recommenderForm.name} onChange={(event) => setRecommenderForm({ ...recommenderForm, name: event.target.value })} /></label>
+            <label className="field">
+              <span>Status</span>
+              <select value={recommenderForm.status} onChange={(event) => setRecommenderForm({ ...recommenderForm, status: event.target.value })}>
+                {Object.entries(recommenderLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field"><span>Notes</span><textarea rows="3" value={recommenderForm.notes} onChange={(event) => setRecommenderForm({ ...recommenderForm, notes: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button primary" type="submit">Save recommender</button>
+              <button className="button secondary" type="button" onClick={() => setRecommenderForm({ id: "", name: "", status: "not-asked", notes: "" })}>Clear</button>
+            </div>
+          </form>
           <div className="stack">
             {planner.recommenders.map((person) => (
               <article key={person.id} className="card">
@@ -1589,6 +1702,17 @@ export default function App() {
         <section className="panel panel-main">
           <p className="eyebrow">Advisor Review</p>
           <h2>Mentor snapshot</h2>
+          <form className="entry-form inline-form" onSubmit={handleAdvisorSubmit}>
+            <h3>Advisor settings</h3>
+            <div className="form-grid">
+              <label className="field"><span>Advisor or mentor name</span><input value={advisorForm.name} onChange={(event) => setAdvisorForm({ ...advisorForm, name: event.target.value })} /></label>
+              <label className="field"><span>Meeting cadence</span><input value={advisorForm.cadence} onChange={(event) => setAdvisorForm({ ...advisorForm, cadence: event.target.value })} /></label>
+            </div>
+            <label className="field"><span>Feedback notes</span><textarea rows="3" value={advisorForm.notes} onChange={(event) => setAdvisorForm({ ...advisorForm, notes: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button primary" type="submit">Save advisor notes</button>
+            </div>
+          </form>
           <article className="card">
             <div className="row">
               <h3>{planner.advisor.name || "No advisor listed"}</h3>
@@ -1678,135 +1802,6 @@ export default function App() {
         </section>
       </main>
 
-      <section className="panel forms-panel" id="forms">
-        <div className="section-row">
-          <div>
-            <p className="eyebrow">Add And Edit</p>
-            <h2>Manage programs, tasks, documents, recommenders, and advisor settings.</h2>
-          </div>
-        </div>
-
-        <div className="forms-grid">
-          <form className="entry-form" onSubmit={handleProgramSubmit}>
-            <h3>Program form</h3>
-            <div className="source-row">
-              <label className="field wide">
-                <span>Program website</span>
-                <input
-                  value={programForm.sourceUrl}
-                  onChange={(event) => setProgramForm({ ...programForm, sourceUrl: event.target.value })}
-                  placeholder="https://example.edu/phd-program"
-                />
-              </label>
-              <button className="button secondary" type="button" onClick={autofillFromLink} disabled={autofillBusy}>
-                {autofillBusy ? "Importing..." : "Autofill from link"}
-              </button>
-            </div>
-            <p className="helper-text">Best effort import: some sites expose better information than others, so you can always edit manually.</p>
-            {programForm.sourceSummary?.length ? (
-              <div className="source-summary">
-                {programForm.sourceSummary.map((entry, index) => (
-                  <p key={index}>{entry}</p>
-                ))}
-              </div>
-            ) : null}
-            <div className="form-grid">
-              <label className="field"><span>School</span><input value={programForm.school} onChange={(event) => setProgramForm({ ...programForm, school: event.target.value })} /></label>
-              <label className="field"><span>Field</span><input value={programForm.field} onChange={(event) => setProgramForm({ ...programForm, field: event.target.value })} /></label>
-              <label className="field"><span>Deadline</span><input type="date" value={programForm.deadline} onChange={(event) => setProgramForm({ ...programForm, deadline: event.target.value })} /></label>
-              <label className="field">
-                <span>Status</span>
-                <select value={programForm.status} onChange={(event) => setProgramForm({ ...programForm, status: event.target.value })}>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field"><span>Location</span><input value={programForm.location} onChange={(event) => setProgramForm({ ...programForm, location: event.target.value })} /></label>
-              <label className="field"><span>Funding</span><input value={programForm.funding} onChange={(event) => setProgramForm({ ...programForm, funding: event.target.value })} /></label>
-              <label className="field"><span>Application fee</span><input value={programForm.applicationFee} onChange={(event) => setProgramForm({ ...programForm, applicationFee: event.target.value })} placeholder="$75" /></label>
-              <label className="field"><span>GRE required</span><input value={programForm.greRequired} onChange={(event) => setProgramForm({ ...programForm, greRequired: event.target.value })} placeholder="Yes, No, Optional" /></label>
-              <label className="field"><span>Writing sample</span><input value={programForm.writingSampleRequired} onChange={(event) => setProgramForm({ ...programForm, writingSampleRequired: event.target.value })} placeholder="Yes or No" /></label>
-              <label className="field"><span>Contact email</span><input value={programForm.contactEmail} onChange={(event) => setProgramForm({ ...programForm, contactEmail: event.target.value })} placeholder="grad@school.edu" /></label>
-              <label className="field"><span>Tags</span><input value={programForm.tags} onChange={(event) => setProgramForm({ ...programForm, tags: event.target.value })} placeholder="STEM, Reach, Funding" /></label>
-              <label className="field"><span>Faculty</span><input value={programForm.faculty} onChange={(event) => setProgramForm({ ...programForm, faculty: event.target.value })} placeholder="Prof. A, Prof. B" /></label>
-            </div>
-            <label className="field"><span>Research fit notes</span><textarea rows="3" value={programForm.fit} onChange={(event) => setProgramForm({ ...programForm, fit: event.target.value })} /></label>
-            <label className="field"><span>Program notes</span><textarea rows="3" value={programForm.notes} onChange={(event) => setProgramForm({ ...programForm, notes: event.target.value })} /></label>
-            <label className="field"><span>Interview notes</span><textarea rows="2" value={programForm.interviewNotes} onChange={(event) => setProgramForm({ ...programForm, interviewNotes: event.target.value })} /></label>
-            <div className="button-row">
-              <button className="button primary" type="submit">Save program</button>
-              <button className="button secondary" type="button" onClick={resetProgramForm}>Clear</button>
-            </div>
-          </form>
-
-          <form className="entry-form" onSubmit={handleTaskSubmit}>
-            <h3>Checklist form</h3>
-            <label className="field"><span>Task title</span><input value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} /></label>
-            <label className="field"><span>Description</span><textarea rows="3" value={taskForm.description} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></label>
-            <label className="field">
-              <span>Priority</span>
-              <select value={taskForm.priority} onChange={(event) => setTaskForm({ ...taskForm, priority: event.target.value })}>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </label>
-            <div className="button-row">
-              <button className="button primary" type="submit">Save task</button>
-              <button className="button secondary" type="button" onClick={() => setTaskForm({ id: "", title: "", description: "", priority: "medium" })}>Clear</button>
-            </div>
-          </form>
-
-          <form className="entry-form" onSubmit={handleDocumentSubmit}>
-            <h3>Document form</h3>
-            <label className="field"><span>Document</span><input value={documentForm.name} onChange={(event) => setDocumentForm({ ...documentForm, name: event.target.value })} /></label>
-            <label className="field">
-              <span>Status</span>
-              <select value={documentForm.status} onChange={(event) => setDocumentForm({ ...documentForm, status: event.target.value })}>
-                {Object.entries(documentLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field"><span>Notes</span><textarea rows="3" value={documentForm.notes} onChange={(event) => setDocumentForm({ ...documentForm, notes: event.target.value })} /></label>
-            <div className="button-row">
-              <button className="button primary" type="submit">Save document</button>
-              <button className="button secondary" type="button" onClick={() => setDocumentForm({ id: "", name: "", status: "not-started", notes: "" })}>Clear</button>
-            </div>
-          </form>
-
-          <form className="entry-form" onSubmit={handleRecommenderSubmit}>
-            <h3>Recommender form</h3>
-            <label className="field"><span>Name</span><input value={recommenderForm.name} onChange={(event) => setRecommenderForm({ ...recommenderForm, name: event.target.value })} /></label>
-            <label className="field">
-              <span>Status</span>
-              <select value={recommenderForm.status} onChange={(event) => setRecommenderForm({ ...recommenderForm, status: event.target.value })}>
-                {Object.entries(recommenderLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field"><span>Notes</span><textarea rows="3" value={recommenderForm.notes} onChange={(event) => setRecommenderForm({ ...recommenderForm, notes: event.target.value })} /></label>
-            <div className="button-row">
-              <button className="button primary" type="submit">Save recommender</button>
-              <button className="button secondary" type="button" onClick={() => setRecommenderForm({ id: "", name: "", status: "not-asked", notes: "" })}>Clear</button>
-            </div>
-          </form>
-        </div>
-
-        <form className="entry-form advisor-form" onSubmit={handleAdvisorSubmit}>
-          <h3>Advisor review settings</h3>
-          <div className="form-grid">
-            <label className="field"><span>Advisor or mentor name</span><input value={advisorForm.name} onChange={(event) => setAdvisorForm({ ...advisorForm, name: event.target.value })} /></label>
-            <label className="field"><span>Meeting cadence</span><input value={advisorForm.cadence} onChange={(event) => setAdvisorForm({ ...advisorForm, cadence: event.target.value })} /></label>
-          </div>
-          <label className="field"><span>Feedback notes</span><textarea rows="3" value={advisorForm.notes} onChange={(event) => setAdvisorForm({ ...advisorForm, notes: event.target.value })} /></label>
-          <div className="button-row">
-            <button className="button primary" type="submit">Save advisor notes</button>
-          </div>
-        </form>
-      </section>
     </div>
   );
 }
