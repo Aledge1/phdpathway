@@ -148,6 +148,54 @@ const defaultState = {
   theme: "light"
 };
 
+const viewMeta = {
+  home: {
+    label: "Home",
+    icon: "◌",
+    blurb: "See the whole application cycle at a glance and jump into the right workspace."
+  },
+  control: {
+    label: "Control Center",
+    icon: "⌘",
+    blurb: "Manage setup, backups, presets, filters, and account state."
+  },
+  programs: {
+    label: "Program Organizer",
+    icon: "◆",
+    blurb: "Add schools, autofill from links, and shape the shortlist."
+  },
+  compare: {
+    label: "Compare View",
+    icon: "◫",
+    blurb: "Review multiple programs side by side before you commit time."
+  },
+  checklist: {
+    label: "Checklist",
+    icon: "✓",
+    blurb: "Track tasks, priorities, and what still needs attention."
+  },
+  documents: {
+    label: "Documents",
+    icon: "▤",
+    blurb: "Keep CVs, statements, transcripts, and notes organized."
+  },
+  recommenders: {
+    label: "Recommendations",
+    icon: "◎",
+    blurb: "Track letter writers, follow-ups, and status updates."
+  },
+  advisor: {
+    label: "Advisor Review",
+    icon: "△",
+    blurb: "Keep strategy notes and mentoring conversations in one place."
+  },
+  summary: {
+    label: "Summary View",
+    icon: "▣",
+    blurb: "Print or review a clean advising snapshot when it is time to share."
+  }
+};
+
 function normalizePlannerState(parsed) {
   const programs = Array.isArray(parsed?.programs) ? parsed.programs : defaultPrograms;
   return {
@@ -695,17 +743,7 @@ export default function App() {
     readyDocs: planner.documents.filter((doc) => doc.status === "ready").length,
     confirmedRecs: planner.recommenders.filter((person) => ["confirmed", "submitted"].includes(person.status)).length
   };
-  const viewLabels = {
-    home: "Home",
-    control: "Control Center",
-    programs: "Program Organizer",
-    compare: "Compare View",
-    checklist: "Checklist",
-    documents: "Documents",
-    recommenders: "Recommendations",
-    advisor: "Advisor Review",
-    summary: "Summary View"
-  };
+  const viewLabels = Object.fromEntries(Object.entries(viewMeta).map(([key, value]) => [key, value.label]));
 
   function updatePlanner(updater) {
     setPlanner((current) => {
@@ -1021,19 +1059,28 @@ export default function App() {
   return (
     <div className="page-shell app-shell">
       <nav className="site-nav">
-        <div>
-          <p className="eyebrow">PhD Pathway Planner</p>
-          <h2>{viewLabels[activeView]}</h2>
+        <div className="brand-lockup">
+          <div className="brand-mark" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div>
+            <p className="eyebrow">PhD Pathway Planner</p>
+            <h2>{viewLabels[activeView]}</h2>
+            <p className="brand-subtitle">{viewMeta[activeView].blurb}</p>
+          </div>
         </div>
         <div className="nav-pills">
-          {Object.entries(viewLabels).map(([value, label]) => (
+          {Object.entries(viewMeta).map(([value, meta]) => (
             <button
               key={value}
               className={`nav-pill${activeView === value ? " active" : ""}`}
               type="button"
               onClick={() => openView(value)}
             >
-              {label}
+              <span className="nav-pill-icon" aria-hidden="true">{meta.icon}</span>
+              {meta.label}
             </button>
           ))}
         </div>
@@ -1043,10 +1090,10 @@ export default function App() {
         <>
           <header className="hero">
             <div className="hero-copy">
-              <p className="eyebrow">React + Vite Version</p>
-              <h1>Plan PhD applications with deadlines, documents, recommenders, and linked program pages.</h1>
+              <p className="eyebrow">Planner Workspace</p>
+              <h1>Build a calmer, clearer PhD application cycle from one place.</h1>
               <p className="hero-text">
-                The app now works more like a real website: use the navigation to move between focused workspaces instead of scrolling through one giant page.
+                Organize programs, compare fit, track materials, and prep for advising meetings without getting lost in a giant scrolling dashboard.
               </p>
               <div className="hero-actions">
                 <button className="button primary" type="button" onClick={() => openView("programs")}>
@@ -1056,13 +1103,29 @@ export default function App() {
                   Manage setup
                 </button>
               </div>
+              <div className="hero-highlights">
+                <article className="mini-card">
+                  <span className="mini-card-icon" aria-hidden="true">◆</span>
+                  <div>
+                    <strong>Build your shortlist</strong>
+                    <p>Keep real program pages, deadlines, faculty, and fit notes together.</p>
+                  </div>
+                </article>
+                <article className="mini-card">
+                  <span className="mini-card-icon" aria-hidden="true">✓</span>
+                  <div>
+                    <strong>Track the work</strong>
+                    <p>See tasks, documents, and recommenders without switching tools.</p>
+                  </div>
+                </article>
+              </div>
             </div>
 
             <section className="hero-card">
               <div className="hero-row">
                 <div>
-                  <p className="eyebrow">Dashboard</p>
-                  <h2>Cycle snapshot</h2>
+                  <p className="eyebrow">Cycle Snapshot</p>
+                  <h2>Your application pace</h2>
                 </div>
                 <button
                   className="button secondary"
@@ -1089,56 +1152,43 @@ export default function App() {
           <section className="panel landing-panel">
             <div className="section-row">
               <div>
-                <p className="eyebrow">Welcome</p>
-                <h2>What this website helps students do</h2>
+                <p className="eyebrow">How It Works</p>
+                <h2>Move through the cycle in focused workspaces</h2>
               </div>
               <button className="button secondary" type="button" onClick={() => openView("programs")}>
                 Start planning
               </button>
             </div>
-            <div className="landing-copy">
-              <p>
-                PhD Pathway Planner helps students build a shortlist, compare programs, manage application materials,
-                track recommendation letters, and prepare clean advising summaries.
-              </p>
-              <p>
-                Instead of one long scrolling page, each area below now opens as its own workspace. Click the section
-                you want and work there directly.
-              </p>
+            <div className="landing-intro">
+              <div className="landing-copy">
+                <p>
+                  PhD Pathway Planner helps students build a shortlist, compare programs, manage application materials,
+                  track recommendation letters, and prepare clean advising summaries.
+                </p>
+                <p>
+                  The site is organized around point-and-click workspaces, so you can step into the exact part of the
+                  process you need instead of scrolling through everything at once.
+                </p>
+              </div>
+              <aside className="journey-card">
+                <p className="eyebrow">Typical Flow</p>
+                <ol className="journey-list">
+                  <li>Shape a shortlist and import real program links.</li>
+                  <li>Compare requirements, deadlines, and advisor fit.</li>
+                  <li>Track materials, letters, and meeting-ready summaries.</li>
+                </ol>
+              </aside>
             </div>
             <div className="section-nav-grid">
-              <button className="nav-card" type="button" onClick={() => openView("control")}>
-                <h3>Control Center</h3>
-                <p>Search, filter, export, import, and manage the planner setup.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("programs")}>
-                <h3>Program Organizer</h3>
-                <p>Add schools, autofill from links, and manage shortlist details.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("compare")}>
-                <h3>Compare View</h3>
-                <p>See multiple programs side by side.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("checklist")}>
-                <h3>Checklist</h3>
-                <p>Track application tasks and progress.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("documents")}>
-                <h3>Documents</h3>
-                <p>Manage statements, CVs, transcripts, and related notes.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("recommenders")}>
-                <h3>Recommendations</h3>
-                <p>Track recommenders and follow-up status.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("advisor")}>
-                <h3>Advisor Review</h3>
-                <p>Keep mentor notes and strategy together.</p>
-              </button>
-              <button className="nav-card" type="button" onClick={() => openView("summary")}>
-                <h3>Summary View</h3>
-                <p>Print or save a clean advising snapshot.</p>
-              </button>
+              {Object.entries(viewMeta)
+                .filter(([key]) => key !== "home")
+                .map(([key, meta]) => (
+                  <button key={key} className="nav-card" type="button" onClick={() => openView(key)}>
+                    <span className="nav-card-icon" aria-hidden="true">{meta.icon}</span>
+                    <h3>{meta.label}</h3>
+                    <p>{meta.blurb}</p>
+                  </button>
+                ))}
             </div>
           </section>
         </>
