@@ -1330,6 +1330,71 @@ textarea {
   gap: 1.05rem;
 }
 
+.form-group {
+  margin-top: 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.form-group summary {
+  list-style: none;
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.95rem 1rem;
+  cursor: pointer;
+}
+
+.form-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.form-group summary span {
+  font-weight: 800;
+}
+
+.form-group summary small {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.form-group-body {
+  padding: 0 1rem 1rem;
+}
+
+.attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(77, 107, 87, 0.1);
+  color: var(--accent-strong);
+  border: 1px solid rgba(77, 107, 87, 0.12);
+}
+
+.attachment-chip small {
+  color: var(--muted);
+}
+
+.attachment-chip-existing {
+  background: rgba(180, 135, 74, 0.1);
+}
+
+.attachment-link {
+  text-decoration: none;
+}
+
+.stored-attachments {
+  margin-top: 1rem;
+}
+
 .source-row {
   display: grid;
   grid-template-columns: 1fr auto;

@@ -46,8 +46,8 @@ const defaultChecklist = [
 ];
 
 const defaultDocuments = [
-  { id: "cv", name: "Academic CV", status: "drafting", notes: "Replace this starter note with your own revision plan." },
-  { id: "sop", name: "Statement of Purpose", status: "not-started", notes: "" }
+  { id: "cv", name: "Academic CV", status: "drafting", notes: "Replace this starter note with your own revision plan.", files: [] },
+  { id: "sop", name: "Statement of Purpose", status: "not-started", notes: "", files: [] }
 ];
 
 const defaultRecommenders = [
@@ -192,7 +192,12 @@ function normalizePlannerState(parsed) {
     checklist: Array.isArray(parsed?.checklist) ? parsed.checklist : defaultChecklist,
     checklistState:
       parsed?.checklistState && typeof parsed.checklistState === "object" ? parsed.checklistState : {},
-    documents: Array.isArray(parsed?.documents) ? parsed.documents : defaultDocuments,
+    documents: Array.isArray(parsed?.documents)
+      ? parsed.documents.map((doc) => ({
+          ...doc,
+          files: Array.isArray(doc?.files) ? doc.files : []
+        }))
+      : defaultDocuments,
     recommenders: Array.isArray(parsed?.recommenders) ? parsed.recommenders : defaultRecommenders,
     advisor:
       parsed?.advisor && typeof parsed.advisor === "object"
@@ -222,6 +227,22 @@ function readStateForKey(key) {
 
 function createId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function formatFileSize(size) {
+  if (!size && size !== 0) return "";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
 }
 
 function parseList(value) {
@@ -536,7 +557,9 @@ export default function App() {
     interviewNotes: ""
   });
   const [taskForm, setTaskForm] = useState({ id: "", title: "", description: "", priority: "medium" });
-  const [documentForm, setDocumentForm] = useState({ id: "", name: "", status: "not-started", notes: "" });
+  const [documentForm, setDocumentForm] = useState({ id: "", name: "", status: "not-started", notes: "", files: [] });
+  const [documentUploads, setDocumentUploads] = useState([]);
+  const [documentUploadMessage, setDocumentUploadMessage] = useState("");
   const [recommenderForm, setRecommenderForm] = useState({ id: "", name: "", status: "not-asked", notes: "" });
   const [advisorForm, setAdvisorForm] = useState(planner.advisor);
   const [lastExportedAt, setLastExportedAt] = useState(() => localStorage.getItem(backupStampKey) || "");
@@ -864,14 +887,43 @@ export default function App() {
     setTaskForm({ id: "", title: "", description: "", priority: "medium" });
   }
 
-  function handleDocumentSubmit(event) {
+  async function handleDocumentSubmit(event) {
     event.preventDefault();
     if (!documentForm.name.trim()) return;
+    setDocumentUploadMessage("");
+
+    let uploadedFiles = [];
+    if (documentUploads.length) {
+      try {
+        const maxFileBytes = 2 * 1024 * 1024;
+        for (const file of documentUploads) {
+          if (file.size > maxFileBytes) {
+            setDocumentUploadMessage(`"${file.name}" is larger than 2 MB, so it was not attached.`);
+            return;
+          }
+        }
+        uploadedFiles = await Promise.all(
+          documentUploads.map(async (file) => ({
+            id: createId("file"),
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+            dataUrl: await readFileAsDataUrl(file)
+          }))
+        );
+      } catch (error) {
+        setDocumentUploadMessage(error.message || "One or more files could not be attached.");
+        return;
+      }
+    }
+
     const documentEntry = {
       id: documentForm.id || createId("document"),
       name: documentForm.name.trim(),
       status: documentForm.status,
-      notes: documentForm.notes.trim()
+      notes: documentForm.notes.trim(),
+      files: [...(documentForm.files || []), ...uploadedFiles]
     };
     updatePlanner((current) => ({
       ...current,
@@ -879,7 +931,11 @@ export default function App() {
         ? current.documents.map((entry) => (entry.id === documentEntry.id ? documentEntry : entry))
         : [documentEntry, ...current.documents]
     }));
-    setDocumentForm({ id: "", name: "", status: "not-started", notes: "" });
+    setDocumentForm({ id: "", name: "", status: "not-started", notes: "", files: [] });
+    setDocumentUploads([]);
+    if (uploadedFiles.length) {
+      setDocumentUploadMessage(`${uploadedFiles.length} file${uploadedFiles.length === 1 ? "" : "s"} attached.`);
+    }
   }
 
   function handleRecommenderSubmit(event) {
@@ -927,6 +983,34 @@ export default function App() {
       interviewNotes: program.interviewNotes || ""
     });
     window.location.hash = "program-editor";
+  }
+
+  function resetDocumentForm() {
+    setDocumentForm({ id: "", name: "", status: "not-started", notes: "", files: [] });
+    setDocumentUploads([]);
+    setDocumentUploadMessage("");
+  }
+
+  function handleDocumentUploadSelection(event) {
+    const selectedFiles = Array.from(event.target.files || []);
+    setDocumentUploads(selectedFiles);
+    if (selectedFiles.length) {
+      setDocumentUploadMessage(`${selectedFiles.length} file${selectedFiles.length === 1 ? "" : "s"} ready to attach on save.`);
+    } else {
+      setDocumentUploadMessage("");
+    }
+  }
+
+  function populateDocumentForm(doc) {
+    setDocumentForm({
+      id: doc.id,
+      name: doc.name,
+      status: doc.status,
+      notes: doc.notes || "",
+      files: Array.isArray(doc.files) ? doc.files : []
+    });
+    setDocumentUploads([]);
+    setDocumentUploadMessage("");
   }
 
   function exportData() {
@@ -1000,7 +1084,7 @@ export default function App() {
       const documents = [...current.documents];
       preset.documents.forEach(([id, nameLabel, status, notes]) => {
         if (!documents.some((item) => item.id === id)) {
-          documents.unshift({ id, name: nameLabel, status, notes });
+          documents.unshift({ id, name: nameLabel, status, notes, files: [] });
         }
       });
 
@@ -1275,7 +1359,7 @@ export default function App() {
                 setSortMode("deadline");
                 resetProgramForm();
                 setTaskForm({ id: "", title: "", description: "", priority: "medium" });
-                setDocumentForm({ id: "", name: "", status: "not-started", notes: "" });
+                resetDocumentForm();
                 setRecommenderForm({ id: "", name: "", status: "not-asked", notes: "" });
               }}
             >
@@ -1484,30 +1568,56 @@ export default function App() {
                 ))}
               </div>
             ) : null}
-            <div className="form-grid">
-              <label className="field"><span>School</span><input value={programForm.school} onChange={(event) => setProgramForm({ ...programForm, school: event.target.value })} /></label>
-              <label className="field"><span>Field</span><input value={programForm.field} onChange={(event) => setProgramForm({ ...programForm, field: event.target.value })} /></label>
-              <label className="field"><span>Deadline</span><input type="date" value={programForm.deadline} onChange={(event) => setProgramForm({ ...programForm, deadline: event.target.value })} /></label>
-              <label className="field">
-                <span>Status</span>
-                <select value={programForm.status} onChange={(event) => setProgramForm({ ...programForm, status: event.target.value })}>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field"><span>Location</span><input value={programForm.location} onChange={(event) => setProgramForm({ ...programForm, location: event.target.value })} /></label>
-              <label className="field"><span>Funding</span><input value={programForm.funding} onChange={(event) => setProgramForm({ ...programForm, funding: event.target.value })} /></label>
-              <label className="field"><span>Application fee</span><input value={programForm.applicationFee} onChange={(event) => setProgramForm({ ...programForm, applicationFee: event.target.value })} placeholder="$75" /></label>
-              <label className="field"><span>GRE required</span><input value={programForm.greRequired} onChange={(event) => setProgramForm({ ...programForm, greRequired: event.target.value })} placeholder="Yes, No, Optional" /></label>
-              <label className="field"><span>Writing sample</span><input value={programForm.writingSampleRequired} onChange={(event) => setProgramForm({ ...programForm, writingSampleRequired: event.target.value })} placeholder="Yes or No" /></label>
-              <label className="field"><span>Contact email</span><input value={programForm.contactEmail} onChange={(event) => setProgramForm({ ...programForm, contactEmail: event.target.value })} placeholder="grad@school.edu" /></label>
-              <label className="field"><span>Tags</span><input value={programForm.tags} onChange={(event) => setProgramForm({ ...programForm, tags: event.target.value })} placeholder="STEM, Reach, Funding" /></label>
-              <label className="field"><span>Faculty</span><input value={programForm.faculty} onChange={(event) => setProgramForm({ ...programForm, faculty: event.target.value })} placeholder="Prof. A, Prof. B" /></label>
-            </div>
-            <label className="field"><span>Research fit notes</span><textarea rows="3" value={programForm.fit} onChange={(event) => setProgramForm({ ...programForm, fit: event.target.value })} /></label>
-            <label className="field"><span>Program notes</span><textarea rows="3" value={programForm.notes} onChange={(event) => setProgramForm({ ...programForm, notes: event.target.value })} /></label>
-            <label className="field"><span>Interview notes</span><textarea rows="2" value={programForm.interviewNotes} onChange={(event) => setProgramForm({ ...programForm, interviewNotes: event.target.value })} /></label>
+            <details className="form-group" open>
+              <summary>
+                <span>Core details</span>
+                <small>School, field, timing, and overall status.</small>
+              </summary>
+              <div className="form-group-body">
+                <div className="form-grid">
+                  <label className="field"><span>School</span><input value={programForm.school} onChange={(event) => setProgramForm({ ...programForm, school: event.target.value })} /></label>
+                  <label className="field"><span>Field</span><input value={programForm.field} onChange={(event) => setProgramForm({ ...programForm, field: event.target.value })} /></label>
+                  <label className="field"><span>Deadline</span><input type="date" value={programForm.deadline} onChange={(event) => setProgramForm({ ...programForm, deadline: event.target.value })} /></label>
+                  <label className="field">
+                    <span>Status</span>
+                    <select value={programForm.status} onChange={(event) => setProgramForm({ ...programForm, status: event.target.value })}>
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field"><span>Location</span><input value={programForm.location} onChange={(event) => setProgramForm({ ...programForm, location: event.target.value })} /></label>
+                  <label className="field"><span>Funding</span><input value={programForm.funding} onChange={(event) => setProgramForm({ ...programForm, funding: event.target.value })} /></label>
+                </div>
+              </div>
+            </details>
+            <details className="form-group">
+              <summary>
+                <span>Requirements and contacts</span>
+                <small>Fees, testing, writing sample, and program contact information.</small>
+              </summary>
+              <div className="form-group-body">
+                <div className="form-grid">
+                  <label className="field"><span>Application fee</span><input value={programForm.applicationFee} onChange={(event) => setProgramForm({ ...programForm, applicationFee: event.target.value })} placeholder="$75" /></label>
+                  <label className="field"><span>GRE required</span><input value={programForm.greRequired} onChange={(event) => setProgramForm({ ...programForm, greRequired: event.target.value })} placeholder="Yes, No, Optional" /></label>
+                  <label className="field"><span>Writing sample</span><input value={programForm.writingSampleRequired} onChange={(event) => setProgramForm({ ...programForm, writingSampleRequired: event.target.value })} placeholder="Yes or No" /></label>
+                  <label className="field"><span>Contact email</span><input value={programForm.contactEmail} onChange={(event) => setProgramForm({ ...programForm, contactEmail: event.target.value })} placeholder="grad@school.edu" /></label>
+                  <label className="field"><span>Tags</span><input value={programForm.tags} onChange={(event) => setProgramForm({ ...programForm, tags: event.target.value })} placeholder="STEM, Reach, Funding" /></label>
+                  <label className="field"><span>Faculty</span><input value={programForm.faculty} onChange={(event) => setProgramForm({ ...programForm, faculty: event.target.value })} placeholder="Prof. A, Prof. B" /></label>
+                </div>
+              </div>
+            </details>
+            <details className="form-group">
+              <summary>
+                <span>Research and interview notes</span>
+                <small>Fit statements, tailoring notes, and interview prep.</small>
+              </summary>
+              <div className="form-group-body stack">
+                <label className="field"><span>Research fit notes</span><textarea rows="3" value={programForm.fit} onChange={(event) => setProgramForm({ ...programForm, fit: event.target.value })} /></label>
+                <label className="field"><span>Program notes</span><textarea rows="3" value={programForm.notes} onChange={(event) => setProgramForm({ ...programForm, notes: event.target.value })} /></label>
+                <label className="field"><span>Interview notes</span><textarea rows="2" value={programForm.interviewNotes} onChange={(event) => setProgramForm({ ...programForm, interviewNotes: event.target.value })} /></label>
+              </div>
+            </details>
             <div className="button-row">
               <button className="button primary" type="submit">Save program</button>
               <button className="button secondary" type="button" onClick={resetProgramForm}>Clear</button>
@@ -1804,19 +1914,73 @@ export default function App() {
           <h2>Core materials</h2>
           <form className="entry-form inline-form" onSubmit={handleDocumentSubmit}>
             <h3>{documentForm.id ? "Edit document" : "Add document"}</h3>
-            <label className="field"><span>Document</span><input value={documentForm.name} onChange={(event) => setDocumentForm({ ...documentForm, name: event.target.value })} /></label>
-            <label className="field">
-              <span>Status</span>
-              <select value={documentForm.status} onChange={(event) => setDocumentForm({ ...documentForm, status: event.target.value })}>
-                {Object.entries(documentLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field"><span>Notes</span><textarea rows="3" value={documentForm.notes} onChange={(event) => setDocumentForm({ ...documentForm, notes: event.target.value })} /></label>
+            <details className="form-group" open>
+              <summary>
+                <span>Document details</span>
+                <small>Name, progress, and writing notes.</small>
+              </summary>
+              <div className="form-group-body stack">
+                <label className="field"><span>Document</span><input value={documentForm.name} onChange={(event) => setDocumentForm({ ...documentForm, name: event.target.value })} /></label>
+                <label className="field">
+                  <span>Status</span>
+                  <select value={documentForm.status} onChange={(event) => setDocumentForm({ ...documentForm, status: event.target.value })}>
+                    {Object.entries(documentLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field"><span>Notes</span><textarea rows="3" value={documentForm.notes} onChange={(event) => setDocumentForm({ ...documentForm, notes: event.target.value })} /></label>
+              </div>
+            </details>
+            <details className="form-group">
+              <summary>
+                <span>Attach files</span>
+                <small>Upload PDFs, docs, or drafts up to 2 MB each.</small>
+              </summary>
+              <div className="form-group-body stack">
+                <label className="field">
+                  <span>Files</span>
+                  <input type="file" multiple onChange={handleDocumentUploadSelection} />
+                </label>
+                {documentUploads.length ? (
+                  <div className="attachment-list">
+                    {documentUploads.map((file) => (
+                      <div key={`${file.name}-${file.size}`} className="attachment-chip">
+                        <span>{file.name}</span>
+                        <small>{formatFileSize(file.size)}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {documentForm.files?.length ? (
+                  <div className="attachment-list">
+                    {documentForm.files.map((file) => (
+                      <div key={file.id} className="attachment-chip attachment-chip-existing">
+                        <span>{file.name}</span>
+                        <small>{formatFileSize(file.size)}</small>
+                        <button
+                          className="button tiny secondary"
+                          type="button"
+                          onClick={() =>
+                            setDocumentForm((current) => ({
+                              ...current,
+                              files: current.files.filter((entry) => entry.id !== file.id)
+                            }))
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <p className="helper-text">Attached files are saved in the browser data for this planner, so large uploads can fill storage more quickly.</p>
+              </div>
+            </details>
+            {documentUploadMessage ? <p className="cloud-message">{documentUploadMessage}</p> : null}
             <div className="button-row">
               <button className="button primary" type="submit">Save document</button>
-              <button className="button secondary" type="button" onClick={() => setDocumentForm({ id: "", name: "", status: "not-started", notes: "" })}>Clear</button>
+              <button className="button secondary" type="button" onClick={resetDocumentForm}>Clear</button>
             </div>
           </form>
           <div className="stack">
@@ -1830,7 +1994,7 @@ export default function App() {
                   <span className={`pill status ${statusClass(doc.status)}`}>{documentLabels[doc.status]}</span>
                 </div>
                 <div className="button-row">
-                  <button className="button tiny secondary" type="button" onClick={() => setDocumentForm(doc)}>
+                  <button className="button tiny secondary" type="button" onClick={() => populateDocumentForm(doc)}>
                     Edit
                   </button>
                   <button
@@ -1846,6 +2010,16 @@ export default function App() {
                     Delete
                   </button>
                 </div>
+                {doc.files?.length ? (
+                  <div className="attachment-list stored-attachments">
+                    {doc.files.map((file) => (
+                      <a key={file.id} className="attachment-chip attachment-link" href={file.dataUrl} download={file.name}>
+                        <span>{file.name}</span>
+                        <small>{formatFileSize(file.size)}</small>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
