@@ -117,10 +117,12 @@ select {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: start;
   row-gap: 1.4rem;
+  column-gap: 1.45rem;
 }
 
 .forms-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.45rem;
 }
 
 .controls-grid {
@@ -143,10 +145,12 @@ select {
 
 .print-summary-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
 }
 
 .compare-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.4rem;
 }
 
 .hero-copy,
@@ -167,7 +171,7 @@ select {
 }
 
 .entry-form {
-  padding: 1rem;
+  padding: 1.15rem;
 }
 
 .hero-copy {
@@ -563,6 +567,14 @@ textarea {
   min-height: 100%;
 }
 
+.panel-side + .panel-side,
+.panel-main + .panel-side,
+.panel-side + .panel-main,
+.panel-full + .panel-main,
+.panel-main + .panel-full {
+  margin-top: 0.2rem;
+}
+
 .panel-primary {
   grid-column: span 7;
 }
@@ -651,7 +663,7 @@ textarea {
 .print-sheet {
   margin-top: 1rem;
   display: grid;
-  gap: 1rem;
+  gap: 1.35rem;
 }
 
 .print-header {
@@ -672,13 +684,13 @@ textarea {
 }
 
 .forms-panel {
-  margin-top: 1rem;
+  margin-top: 1.7rem;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  gap: 1.05rem;
 }
 
 .source-row {
@@ -689,7 +701,7 @@ textarea {
 }
 
 .advisor-form {
-  margin-top: 1rem;
+  margin-top: 1.45rem;
 }
 
 .helper-text {
