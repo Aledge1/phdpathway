@@ -506,7 +506,119 @@ body[data-theme="dark"] .site-nav {
   place-items: center;
   background: rgba(77, 107, 87, 0.14);
   color: var(--accent-strong);
-  font-weight: 700;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.hero-showcase {
+  display: grid;
+  gap: 1rem;
+}
+
+.showcase-frame {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1rem;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 48%),
+    rgba(255, 251, 245, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+}
+
+.showcase-rail {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.showcase-rail span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(77, 107, 87, 0.18);
+}
+
+.showcase-rail span:first-child {
+  background: rgba(183, 122, 93, 0.42);
+}
+
+.showcase-rail span:nth-child(2) {
+  background: rgba(180, 135, 74, 0.42);
+}
+
+.showcase-rail span:nth-child(3) {
+  background: rgba(77, 107, 87, 0.42);
+}
+
+.showcase-body {
+  display: grid;
+  grid-template-columns: 1.25fr 0.82fr;
+  gap: 1rem;
+}
+
+.showcase-panel,
+.showcase-note {
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  padding: 1rem;
+}
+
+.showcase-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.showcase-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.showcase-stat {
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(77, 107, 87, 0.08), rgba(255, 251, 245, 0.86));
+  border: 1px solid rgba(77, 107, 87, 0.08);
+}
+
+.showcase-stat span,
+.showcase-kicker {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.showcase-stat strong,
+.showcase-note strong {
+  font-size: 1.5rem;
+  color: var(--accent-strong);
+}
+
+.showcase-side {
+  display: grid;
+  gap: 1rem;
+}
+
+.showcase-note {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  min-height: 0;
+}
+
+.showcase-note p {
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .section-row,
@@ -1209,7 +1321,9 @@ textarea {
   }
 
   .landing-intro,
-  .hero-highlights {
+  .hero-highlights,
+  .showcase-body,
+  .showcase-stat-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1272,6 +1386,11 @@ textarea {
 
   h1 {
     max-width: none;
+  }
+
+  .showcase-panel-head {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 

@@ -9,41 +9,21 @@ const autosaveStampKey = "phd-pathway-react-last-autosave";
 
 const defaultPrograms = [
   {
-    id: "mit-cs",
-    school: "MIT",
-    field: "Computer Science",
+    id: "sample-program",
+    school: "Sample University",
+    field: "PhD Program",
     deadline: "2026-12-15",
-    status: "drafting",
-    funding: "Full funding + stipend",
-    location: "Cambridge, MA",
-    tags: ["STEM", "AI", "Reach"],
-    faculty: ["Prof. Ana Rivera", "Prof. Daniel Cho"],
-    fit: "Strong for applicants focused on machine learning systems and interdisciplinary computing research.",
-    notes: "Needs a sharper paragraph on systems impact and recent research papers.",
-    applicationFee: "$75",
-    greRequired: "Optional",
-    writingSampleRequired: "No",
-    contactEmail: "grad-admissions@mit.edu",
-    interviewNotes: "",
-    sourceUrl: "",
-    sourceSummary: []
-  },
-  {
-    id: "umich-soc",
-    school: "University of Michigan",
-    field: "Sociology",
-    deadline: "2026-12-01",
     status: "researching",
-    funding: "5-year funding package",
-    location: "Ann Arbor, MI",
-    tags: ["Social Science", "Methods", "Strong fit"],
-    faculty: ["Prof. Nia Freeman", "Prof. Luka Patel"],
-    fit: "Excellent for inequality, institutions, and mixed-methods social research.",
-    notes: "Compare methods training and placement outcomes.",
-    applicationFee: "$90",
-    greRequired: "No",
-    writingSampleRequired: "Yes",
-    contactEmail: "soc-phd-info@umich.edu",
+    funding: "Funding details to confirm",
+    location: "City, State",
+    tags: ["Starter", "Edit me"],
+    faculty: ["Potential advisor"],
+    fit: "Use this sample entry as a starting point, then replace it with a real program you want to track.",
+    notes: "Swap in your own program details, deadlines, and advisor notes.",
+    applicationFee: "",
+    greRequired: "",
+    writingSampleRequired: "",
+    contactEmail: "",
     interviewNotes: "",
     sourceUrl: "",
     sourceSummary: []
@@ -58,12 +38,6 @@ const defaultChecklist = [
     priority: "high"
   },
   {
-    id: "contact-recommenders",
-    title: "Confirm recommenders",
-    description: "Ask letter writers early and share your CV, statement draft, and deadlines.",
-    priority: "high"
-  },
-  {
     id: "draft-statement",
     title: "Draft statement of purpose",
     description: "Build a master draft you can customize by advisor and department.",
@@ -72,20 +46,18 @@ const defaultChecklist = [
 ];
 
 const defaultDocuments = [
-  { id: "cv", name: "Academic CV", status: "review", notes: "One more faculty review pass." },
-  { id: "sop", name: "Statement of Purpose", status: "drafting", notes: "Master draft is 70% done." },
-  { id: "transcript", name: "Transcripts", status: "ready", notes: "Unofficial copies saved." }
+  { id: "cv", name: "Academic CV", status: "drafting", notes: "Replace this starter note with your own revision plan." },
+  { id: "sop", name: "Statement of Purpose", status: "not-started", notes: "" }
 ];
 
 const defaultRecommenders = [
-  { id: "mentor-1", name: "Prof. Elena Brooks", status: "confirmed", notes: "Needs deadlines sheet next week." },
-  { id: "mentor-2", name: "Prof. Serena Hall", status: "requested", notes: "Follow up after sharing CV." }
+  { id: "mentor-1", name: "Potential recommender", status: "not-asked", notes: "Replace this sample person with your own letter writer." }
 ];
 
 const defaultAdvisor = {
-  name: "Faculty Mentor",
-  cadence: "Biweekly",
-  notes: "Review shortlist balance, statement framing, and letters."
+  name: "Advisor or mentor",
+  cadence: "Monthly",
+  notes: "Use this space for advising reminders or meeting notes."
 };
 
 const statusLabels = {
@@ -1106,14 +1078,14 @@ export default function App() {
               </div>
               <div className="hero-highlights">
                 <article className="mini-card">
-                  <span className="mini-card-icon" aria-hidden="true">◆</span>
+                  <span className="mini-card-icon" aria-hidden="true">PO</span>
                   <div>
                     <strong>Build your shortlist</strong>
                     <p>Keep real program pages, deadlines, faculty, and fit notes together.</p>
                   </div>
                 </article>
                 <article className="mini-card">
-                  <span className="mini-card-icon" aria-hidden="true">✓</span>
+                  <span className="mini-card-icon" aria-hidden="true">CL</span>
                   <div>
                     <strong>Track the work</strong>
                     <p>See tasks, documents, and recommenders without switching tools.</p>
@@ -1122,10 +1094,10 @@ export default function App() {
               </div>
             </div>
 
-            <section className="hero-card">
+            <section className="hero-card hero-showcase">
               <div className="hero-row">
                 <div>
-                  <p className="eyebrow">Cycle Snapshot</p>
+                  <p className="eyebrow">Featured Workspace</p>
                   <h2>Your application pace</h2>
                 </div>
                 <button
@@ -1136,16 +1108,52 @@ export default function App() {
                   {planner.theme === "dark" ? "Light mode" : "Dark mode"}
                 </button>
               </div>
-              <div className="stats-grid">
-                <article className="stat-card"><span>Programs</span><strong>{dashboard.programs}</strong></article>
-                <article className="stat-card"><span>Urgent deadlines</span><strong>{dashboard.urgent}</strong></article>
-                <article className="stat-card"><span>Submitted</span><strong>{dashboard.submitted}</strong></article>
-                <article className="stat-card"><span>Ready documents</span><strong>{dashboard.readyDocs}</strong></article>
-                <article className="stat-card"><span>Confirmed letters</span><strong>{dashboard.confirmedRecs}</strong></article>
-                <article className="stat-card"><span>Checklist progress</span><strong>{progress}%</strong></article>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${progress}%` }} />
+              <div className="showcase-frame">
+                <div className="showcase-rail" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="showcase-body">
+                  <section className="showcase-panel">
+                    <div className="showcase-panel-head">
+                      <div>
+                        <p className="eyebrow">Current Focus</p>
+                        <h3>Cycle snapshot</h3>
+                      </div>
+                      <span className="pill reminder">{progress}% complete</span>
+                    </div>
+                    <div className="showcase-stat-grid">
+                      <article className="showcase-stat">
+                        <span>Programs</span>
+                        <strong>{dashboard.programs}</strong>
+                      </article>
+                      <article className="showcase-stat">
+                        <span>Urgent</span>
+                        <strong>{dashboard.urgent}</strong>
+                      </article>
+                      <article className="showcase-stat">
+                        <span>Submitted</span>
+                        <strong>{dashboard.submitted}</strong>
+                      </article>
+                    </div>
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                  </section>
+                  <aside className="showcase-side">
+                    <article className="showcase-note">
+                      <span className="showcase-kicker">Ready materials</span>
+                      <strong>{dashboard.readyDocs} documents</strong>
+                      <p>Keep statements, CVs, and transcripts aligned with each deadline.</p>
+                    </article>
+                    <article className="showcase-note">
+                      <span className="showcase-kicker">Recommendation status</span>
+                      <strong>{dashboard.confirmedRecs} letters in motion</strong>
+                      <p>Track who is confirmed and who still needs a follow-up.</p>
+                    </article>
+                  </aside>
+                </div>
               </div>
             </section>
           </header>
