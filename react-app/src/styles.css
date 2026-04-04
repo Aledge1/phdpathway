@@ -260,6 +260,72 @@ body[data-theme="dark"] .site-nav {
   gap: 1.2rem;
 }
 
+.workspace-masthead {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr;
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 0.1rem;
+}
+
+.workspace-copy,
+.workspace-summary {
+  background: linear-gradient(135deg, rgba(255, 251, 245, 0.78), rgba(235, 242, 229, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  padding: 1.2rem 1.25rem;
+}
+
+.workspace-copy {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.workspace-copy p {
+  max-width: 62ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.workspace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  padding: 0.35rem 0.45rem 0.35rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--accent-strong);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.workspace-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-content: flex-start;
+  gap: 0.75rem;
+}
+
+.workspace-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(77, 107, 87, 0.1);
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.workspace-home-button {
+  margin-left: auto;
+}
+
 .hero {
   grid-template-columns: 1.35fr 1fr;
   margin-bottom: 1.3rem;
@@ -329,6 +395,8 @@ body[data-theme="dark"] .site-nav {
 
 .entry-form {
   padding: 1.15rem;
+  background: linear-gradient(180deg, rgba(255, 251, 245, 0.86), rgba(250, 247, 240, 0.72));
+  border-color: rgba(255, 255, 255, 0.66);
 }
 
 .landing-panel {
@@ -746,7 +814,7 @@ textarea {
 
 .card,
 .stat-card {
-  background: var(--panel-strong);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(253, 249, 242, 0.94));
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 1rem;
@@ -759,6 +827,11 @@ textarea {
 .site-nav {
   position: relative;
   overflow: hidden;
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .panel::before {
@@ -1067,6 +1140,10 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.content-grid {
+  margin-top: 0.3rem;
+}
+
 #program-organizer::before {
   background: linear-gradient(180deg, var(--accent), transparent 78%);
 }
@@ -1178,6 +1255,14 @@ textarea {
 .print-program,
 .compare-card {
   padding: 1.15rem;
+}
+
+.inline-form {
+  margin: 1.15rem 0 1.35rem;
+}
+
+.helper-text {
+  color: var(--muted);
 }
 
 .panel + .panel,
@@ -1322,6 +1407,7 @@ textarea {
 
   .landing-intro,
   .hero-highlights,
+  .workspace-masthead,
   .showcase-body,
   .showcase-stat-grid {
     grid-template-columns: 1fr;

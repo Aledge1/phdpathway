@@ -716,6 +716,26 @@ export default function App() {
     confirmedRecs: planner.recommenders.filter((person) => ["confirmed", "submitted"].includes(person.status)).length
   };
   const viewLabels = Object.fromEntries(Object.entries(viewMeta).map(([key, value]) => [key, value.label]));
+  const workspaceDescriptions = {
+    control: "Tune the planner, manage backups, and keep the environment ready before you dive into application work.",
+    programs: "Build the shortlist, capture real program details, and keep one focused view on the schools that matter most.",
+    compare: "Pressure-test your shortlist by reviewing requirements, funding, and fit side by side.",
+    checklist: "Turn a complex application cycle into a smaller set of trackable next actions.",
+    documents: "Keep written materials and supporting documents moving forward with less friction.",
+    recommenders: "Track who is writing, who needs a reminder, and where letter requests still need attention.",
+    advisor: "Keep advising notes, strategic reminders, and meeting prep in one clean place.",
+    summary: "Generate a concise snapshot you can print, save, or bring into advising conversations."
+  };
+  const workspaceSnapshots = {
+    control: [`${planner.programs.length} programs`, `${allTags.length - 1} tags`, `${progress}% checklist complete`],
+    programs: [`${filteredPrograms.length} visible now`, `${compareIds.length}/3 in compare`, `${dashboard.urgent} urgent deadlines`],
+    compare: [`${comparedPrograms.length} selected`, `${planner.programs.length} total programs`, `${dashboard.submitted} submitted`],
+    checklist: [`${checklistItems.length} tasks`, `${progress}% done`, `${checklistItems.filter((task) => !task.done).length} still open`],
+    documents: [`${planner.documents.length} documents`, `${dashboard.readyDocs} ready`, `${planner.documents.filter((doc) => doc.status === "drafting").length} drafting`],
+    recommenders: [`${planner.recommenders.length} recommenders`, `${dashboard.confirmedRecs} confirmed`, `${planner.recommenders.filter((person) => person.status === "requested").length} requested`],
+    advisor: [`${planner.programs.length} programs in cycle`, `${dashboard.urgent} urgent deadlines`, `${planner.recommenders.length} letter writers`],
+    summary: [`${printPrograms.length} programs`, `${progress}% checklist complete`, `${planner.documents.length + planner.recommenders.length} support items`]
+  };
 
   function updatePlanner(updater) {
     setPlanner((current) => {
@@ -1058,6 +1078,29 @@ export default function App() {
           ))}
         </div>
       </nav>
+
+      {activeView !== "home" ? (
+        <section className="workspace-masthead">
+          <div className="workspace-copy">
+            <span className="workspace-badge">
+              <span className="nav-pill-icon" aria-hidden="true">{viewMeta[activeView].icon}</span>
+              {viewMeta[activeView].label}
+            </span>
+            <h2>{viewLabels[activeView]}</h2>
+            <p>{workspaceDescriptions[activeView]}</p>
+          </div>
+          <div className="workspace-summary">
+            {(workspaceSnapshots[activeView] || []).map((item) => (
+              <span key={item} className="workspace-chip">
+                {item}
+              </span>
+            ))}
+            <button className="button secondary workspace-home-button" type="button" onClick={() => openView("home")}>
+              Back to home
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       {activeView === "home" ? (
         <>
