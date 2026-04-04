@@ -103,7 +103,8 @@ select {
 .cloud-grid,
 .calendar-grid,
 .print-summary-grid,
-.compare-grid {
+.compare-grid,
+.section-nav-grid {
   display: grid;
   gap: 1.2rem;
 }
@@ -153,6 +154,11 @@ select {
   gap: 1.4rem;
 }
 
+.section-nav-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 1.3rem;
+}
+
 .hero-copy,
 .hero-card,
 .panel,
@@ -172,6 +178,38 @@ select {
 
 .entry-form {
   padding: 1.15rem;
+}
+
+.landing-panel {
+  margin-bottom: 1.35rem;
+}
+
+.landing-copy {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 70ch;
+}
+
+.nav-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.nav-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.28);
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.08);
+}
+
+.nav-card p {
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .hero-copy {
@@ -773,7 +811,8 @@ textarea {
   .backup-card,
   .calendar-grid,
   .print-summary-grid,
-  .compare-grid {
+  .compare-grid,
+  .section-nav-grid {
     grid-template-columns: 1fr;
   }
 

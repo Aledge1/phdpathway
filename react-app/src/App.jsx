@@ -1048,6 +1048,62 @@ export default function App() {
         </section>
       </header>
 
+      <section className="panel landing-panel" id="overview">
+        <div className="section-row">
+          <div>
+            <p className="eyebrow">Welcome</p>
+            <h2>What this planner helps you do</h2>
+          </div>
+          <a className="button secondary" href="#programs">
+            Jump into planner
+          </a>
+        </div>
+        <div className="landing-copy">
+          <p>
+            PhD Pathway Planner helps students organize programs, track deadlines, compare schools, manage letters and
+            documents, and keep all application notes in one place.
+          </p>
+          <p>
+            Use the sections below as a point-and-click map of the site. Each card jumps straight to the matching
+            workspace so you can move through the planner without hunting around.
+          </p>
+        </div>
+        <div className="section-nav-grid">
+          <a className="nav-card" href="#programs">
+            <h3>Control Center</h3>
+            <p>Search, filter, export, import, and manage your planner setup.</p>
+          </a>
+          <a className="nav-card" href="#program-organizer">
+            <h3>Program Organizer</h3>
+            <p>Add schools, autofill from program links, and manage shortlist details.</p>
+          </a>
+          <a className="nav-card" href="#compare-view">
+            <h3>Compare View</h3>
+            <p>Line up schools side by side to compare deadlines, costs, and requirements.</p>
+          </a>
+          <a className="nav-card" href="#checklist-section">
+            <h3>Checklist</h3>
+            <p>Track application steps and keep progress visible throughout the cycle.</p>
+          </a>
+          <a className="nav-card" href="#documents-section">
+            <h3>Documents</h3>
+            <p>Manage statements, transcripts, CVs, and other core application materials.</p>
+          </a>
+          <a className="nav-card" href="#recommenders-section">
+            <h3>Recommendations</h3>
+            <p>Track recommenders, outreach status, and submission follow-up.</p>
+          </a>
+          <a className="nav-card" href="#advisor-section">
+            <h3>Advisor Review</h3>
+            <p>Keep mentor notes, meeting cadence, and advising strategy in one place.</p>
+          </a>
+          <a className="nav-card" href="#summary-section">
+            <h3>Summary View</h3>
+            <p>Print or save a clean summary for advising meetings and application reviews.</p>
+          </a>
+        </div>
+      </section>
+
       <section className="panel controls-panel" id="programs">
         <div className="section-row">
           <div>
@@ -1245,7 +1301,7 @@ export default function App() {
       </section>
 
       <main className="content-grid">
-        <section className="panel panel-primary">
+        <section className="panel panel-primary" id="program-organizer">
           <div className="section-row">
             <div>
               <p className="eyebrow">Program Organizer</p>
@@ -1478,7 +1534,7 @@ export default function App() {
           </div>
         </aside>
 
-        <section className="panel panel-full">
+        <section className="panel panel-full" id="compare-view">
           <div className="section-row">
             <div>
               <p className="eyebrow">Compare View</p>
@@ -1514,7 +1570,7 @@ export default function App() {
           )}
         </section>
 
-        <section className="panel panel-main">
+        <section className="panel panel-main" id="checklist-section">
           <div className="section-row">
             <div>
               <p className="eyebrow">Checklist</p>
@@ -1595,7 +1651,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel panel-side">
+        <section className="panel panel-side" id="documents-section">
           <p className="eyebrow">Documents</p>
           <h2>Core materials</h2>
           <form className="entry-form inline-form" onSubmit={handleDocumentSubmit}>
@@ -1647,7 +1703,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel panel-side">
+        <section className="panel panel-side" id="recommenders-section">
           <p className="eyebrow">Recommendations</p>
           <h2>Letter writer tracker</h2>
           <form className="entry-form inline-form" onSubmit={handleRecommenderSubmit}>
@@ -1699,7 +1755,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel panel-main">
+        <section className="panel panel-main" id="advisor-section">
           <p className="eyebrow">Advisor Review</p>
           <h2>Mentor snapshot</h2>
           <form className="entry-form inline-form" onSubmit={handleAdvisorSubmit}>
@@ -1732,7 +1788,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel print-panel panel-full">
+        <section className="panel print-panel panel-full" id="summary-section">
           <div className="section-row">
             <div>
               <p className="eyebrow">Summary View</p>
