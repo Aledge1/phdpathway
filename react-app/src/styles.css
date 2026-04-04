@@ -95,6 +95,53 @@ select {
   padding: 1.3rem 0 3rem;
 }
 
+.app-shell {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.site-nav {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
+  background: rgba(255, 252, 246, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+body[data-theme="dark"] .site-nav {
+  background: rgba(20, 29, 33, 0.82);
+}
+
+.nav-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
+
+.nav-pill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.nav-pill.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: white;
+  border-color: transparent;
+}
+
 .hero,
 .content-grid,
 .forms-grid,
@@ -198,6 +245,8 @@ select {
   border: 1px solid var(--line);
   background: var(--panel-strong);
   text-decoration: none;
+  text-align: left;
+  cursor: pointer;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -827,6 +876,11 @@ textarea {
   .panel-sidebar {
     position: static;
   }
+
+  .site-nav {
+    position: static;
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -851,6 +905,7 @@ textarea {
   .section-row,
   .row,
   .hero-row,
+  .site-nav,
   .timeline-card,
   .compare-toolbar,
   .print-header,
@@ -859,6 +914,10 @@ textarea {
   .inline-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .nav-pills {
+    justify-content: flex-start;
   }
 
   .controls-actions {

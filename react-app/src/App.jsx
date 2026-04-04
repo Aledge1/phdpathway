@@ -484,6 +484,7 @@ export default function App() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [sortMode, setSortMode] = useState("deadline");
   const [autofillBusy, setAutofillBusy] = useState(false);
+  const [activeView, setActiveView] = useState("home");
   const [authMode, setAuthMode] = useState("signin");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -694,6 +695,17 @@ export default function App() {
     readyDocs: planner.documents.filter((doc) => doc.status === "ready").length,
     confirmedRecs: planner.recommenders.filter((person) => ["confirmed", "submitted"].includes(person.status)).length
   };
+  const viewLabels = {
+    home: "Home",
+    control: "Control Center",
+    programs: "Program Organizer",
+    compare: "Compare View",
+    checklist: "Checklist",
+    documents: "Documents",
+    recommenders: "Recommendations",
+    advisor: "Advisor Review",
+    summary: "Summary View"
+  };
 
   function updatePlanner(updater) {
     setPlanner((current) => {
@@ -704,6 +716,11 @@ export default function App() {
       setCompareIds((currentCompareIds) => currentCompareIds.filter((id) => next.programs.some((program) => program.id === id)));
       return next;
     });
+  }
+
+  function openView(view) {
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleAuthSubmit(event) {
@@ -1002,109 +1019,132 @@ export default function App() {
   }
 
   return (
-    <div className="page-shell">
-      <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">React + Vite Version</p>
-          <h1>Plan PhD applications with deadlines, documents, recommenders, and linked program pages.</h1>
-          <p className="hero-text">
-            The React app now includes a real shortlist, checklist tracking, import/export, source-link autofill, and advising notes.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href="#programs">
-              Open planner
-            </a>
-            <a className="button secondary" href="#program-editor">
-              Add program
-            </a>
-          </div>
+    <div className="page-shell app-shell">
+      <nav className="site-nav">
+        <div>
+          <p className="eyebrow">PhD Pathway Planner</p>
+          <h2>{viewLabels[activeView]}</h2>
         </div>
-
-        <section className="hero-card">
-          <div className="hero-row">
-            <div>
-              <p className="eyebrow">Dashboard</p>
-              <h2>Cycle snapshot</h2>
-            </div>
+        <div className="nav-pills">
+          {Object.entries(viewLabels).map(([value, label]) => (
             <button
-              className="button secondary"
+              key={value}
+              className={`nav-pill${activeView === value ? " active" : ""}`}
               type="button"
-              onClick={() => updatePlanner((current) => ({ ...current, theme: current.theme === "dark" ? "light" : "dark" }))}
+              onClick={() => openView(value)}
             >
-              {planner.theme === "dark" ? "Light mode" : "Dark mode"}
+              {label}
             </button>
-          </div>
-          <div className="stats-grid">
-            <article className="stat-card"><span>Programs</span><strong>{dashboard.programs}</strong></article>
-            <article className="stat-card"><span>Urgent deadlines</span><strong>{dashboard.urgent}</strong></article>
-            <article className="stat-card"><span>Submitted</span><strong>{dashboard.submitted}</strong></article>
-            <article className="stat-card"><span>Ready documents</span><strong>{dashboard.readyDocs}</strong></article>
-            <article className="stat-card"><span>Confirmed letters</span><strong>{dashboard.confirmedRecs}</strong></article>
-            <article className="stat-card"><span>Checklist progress</span><strong>{progress}%</strong></article>
-          </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        </section>
-      </header>
+          ))}
+        </div>
+      </nav>
 
-      <section className="panel landing-panel" id="overview">
-        <div className="section-row">
-          <div>
-            <p className="eyebrow">Welcome</p>
-            <h2>What this planner helps you do</h2>
-          </div>
-          <a className="button secondary" href="#programs">
-            Jump into planner
-          </a>
-        </div>
-        <div className="landing-copy">
-          <p>
-            PhD Pathway Planner helps students organize programs, track deadlines, compare schools, manage letters and
-            documents, and keep all application notes in one place.
-          </p>
-          <p>
-            Use the sections below as a point-and-click map of the site. Each card jumps straight to the matching
-            workspace so you can move through the planner without hunting around.
-          </p>
-        </div>
-        <div className="section-nav-grid">
-          <a className="nav-card" href="#programs">
-            <h3>Control Center</h3>
-            <p>Search, filter, export, import, and manage your planner setup.</p>
-          </a>
-          <a className="nav-card" href="#program-organizer">
-            <h3>Program Organizer</h3>
-            <p>Add schools, autofill from program links, and manage shortlist details.</p>
-          </a>
-          <a className="nav-card" href="#compare-view">
-            <h3>Compare View</h3>
-            <p>Line up schools side by side to compare deadlines, costs, and requirements.</p>
-          </a>
-          <a className="nav-card" href="#checklist-section">
-            <h3>Checklist</h3>
-            <p>Track application steps and keep progress visible throughout the cycle.</p>
-          </a>
-          <a className="nav-card" href="#documents-section">
-            <h3>Documents</h3>
-            <p>Manage statements, transcripts, CVs, and other core application materials.</p>
-          </a>
-          <a className="nav-card" href="#recommenders-section">
-            <h3>Recommendations</h3>
-            <p>Track recommenders, outreach status, and submission follow-up.</p>
-          </a>
-          <a className="nav-card" href="#advisor-section">
-            <h3>Advisor Review</h3>
-            <p>Keep mentor notes, meeting cadence, and advising strategy in one place.</p>
-          </a>
-          <a className="nav-card" href="#summary-section">
-            <h3>Summary View</h3>
-            <p>Print or save a clean summary for advising meetings and application reviews.</p>
-          </a>
-        </div>
-      </section>
+      {activeView === "home" ? (
+        <>
+          <header className="hero">
+            <div className="hero-copy">
+              <p className="eyebrow">React + Vite Version</p>
+              <h1>Plan PhD applications with deadlines, documents, recommenders, and linked program pages.</h1>
+              <p className="hero-text">
+                The app now works more like a real website: use the navigation to move between focused workspaces instead of scrolling through one giant page.
+              </p>
+              <div className="hero-actions">
+                <button className="button primary" type="button" onClick={() => openView("programs")}>
+                  Open planner
+                </button>
+                <button className="button secondary" type="button" onClick={() => openView("control")}>
+                  Manage setup
+                </button>
+              </div>
+            </div>
 
-      <section className="panel controls-panel" id="programs">
+            <section className="hero-card">
+              <div className="hero-row">
+                <div>
+                  <p className="eyebrow">Dashboard</p>
+                  <h2>Cycle snapshot</h2>
+                </div>
+                <button
+                  className="button secondary"
+                  type="button"
+                  onClick={() => updatePlanner((current) => ({ ...current, theme: current.theme === "dark" ? "light" : "dark" }))}
+                >
+                  {planner.theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
+              </div>
+              <div className="stats-grid">
+                <article className="stat-card"><span>Programs</span><strong>{dashboard.programs}</strong></article>
+                <article className="stat-card"><span>Urgent deadlines</span><strong>{dashboard.urgent}</strong></article>
+                <article className="stat-card"><span>Submitted</span><strong>{dashboard.submitted}</strong></article>
+                <article className="stat-card"><span>Ready documents</span><strong>{dashboard.readyDocs}</strong></article>
+                <article className="stat-card"><span>Confirmed letters</span><strong>{dashboard.confirmedRecs}</strong></article>
+                <article className="stat-card"><span>Checklist progress</span><strong>{progress}%</strong></article>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${progress}%` }} />
+              </div>
+            </section>
+          </header>
+
+          <section className="panel landing-panel">
+            <div className="section-row">
+              <div>
+                <p className="eyebrow">Welcome</p>
+                <h2>What this website helps students do</h2>
+              </div>
+              <button className="button secondary" type="button" onClick={() => openView("programs")}>
+                Start planning
+              </button>
+            </div>
+            <div className="landing-copy">
+              <p>
+                PhD Pathway Planner helps students build a shortlist, compare programs, manage application materials,
+                track recommendation letters, and prepare clean advising summaries.
+              </p>
+              <p>
+                Instead of one long scrolling page, each area below now opens as its own workspace. Click the section
+                you want and work there directly.
+              </p>
+            </div>
+            <div className="section-nav-grid">
+              <button className="nav-card" type="button" onClick={() => openView("control")}>
+                <h3>Control Center</h3>
+                <p>Search, filter, export, import, and manage the planner setup.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("programs")}>
+                <h3>Program Organizer</h3>
+                <p>Add schools, autofill from links, and manage shortlist details.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("compare")}>
+                <h3>Compare View</h3>
+                <p>See multiple programs side by side.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("checklist")}>
+                <h3>Checklist</h3>
+                <p>Track application tasks and progress.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("documents")}>
+                <h3>Documents</h3>
+                <p>Manage statements, CVs, transcripts, and related notes.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("recommenders")}>
+                <h3>Recommendations</h3>
+                <p>Track recommenders and follow-up status.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("advisor")}>
+                <h3>Advisor Review</h3>
+                <p>Keep mentor notes and strategy together.</p>
+              </button>
+              <button className="nav-card" type="button" onClick={() => openView("summary")}>
+                <h3>Summary View</h3>
+                <p>Print or save a clean advising snapshot.</p>
+              </button>
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {activeView === "control" ? <section className="panel controls-panel" id="programs">
         <div className="section-row">
           <div>
             <p className="eyebrow">Control Center</p>
@@ -1298,9 +1338,9 @@ export default function App() {
           </div>
           <span className="pill">{compareIds.length}/3 selected</span>
         </div>
-      </section>
+      </section> : null}
 
-      <main className="content-grid">
+      {activeView === "programs" ? <main className="content-grid">
         <section className="panel panel-primary" id="program-organizer">
           <div className="section-row">
             <div>
@@ -1309,9 +1349,9 @@ export default function App() {
             </div>
             <div className="button-row">
               <span className="pill">{filteredPrograms.length} programs</span>
-              <a className="button tiny secondary" href="#program-editor">
+              <button className="button tiny secondary" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 Add program
-              </a>
+              </button>
             </div>
           </div>
           <form className="entry-form inline-form" id="program-editor" onSubmit={handleProgramSubmit}>
@@ -1533,7 +1573,9 @@ export default function App() {
             )}
           </div>
         </aside>
+      </main> : null}
 
+      {activeView === "compare" ? <main className="content-grid">
         <section className="panel panel-full" id="compare-view">
           <div className="section-row">
             <div>
@@ -1566,11 +1608,13 @@ export default function App() {
               ))}
             </div>
           ) : (
-            <div className="empty-state">Use “Add to compare” on program cards to build a side-by-side view.</div>
+            <div className="empty-state">Use “Add to compare” in Program Organizer first, then come back here.</div>
           )}
         </section>
+      </main> : null}
 
-        <section className="panel panel-main" id="checklist-section">
+      {activeView === "checklist" ? <main className="content-grid">
+        <section className="panel panel-main panel-full" id="checklist-section">
           <div className="section-row">
             <div>
               <p className="eyebrow">Checklist</p>
@@ -1650,8 +1694,10 @@ export default function App() {
             ))}
           </div>
         </section>
+      </main> : null}
 
-        <section className="panel panel-side" id="documents-section">
+      {activeView === "documents" ? <main className="content-grid">
+        <section className="panel panel-side panel-full" id="documents-section">
           <p className="eyebrow">Documents</p>
           <h2>Core materials</h2>
           <form className="entry-form inline-form" onSubmit={handleDocumentSubmit}>
@@ -1702,8 +1748,10 @@ export default function App() {
             ))}
           </div>
         </section>
+      </main> : null}
 
-        <section className="panel panel-side" id="recommenders-section">
+      {activeView === "recommenders" ? <main className="content-grid">
+        <section className="panel panel-side panel-full" id="recommenders-section">
           <p className="eyebrow">Recommendations</p>
           <h2>Letter writer tracker</h2>
           <form className="entry-form inline-form" onSubmit={handleRecommenderSubmit}>
@@ -1754,8 +1802,10 @@ export default function App() {
             ))}
           </div>
         </section>
+      </main> : null}
 
-        <section className="panel panel-main" id="advisor-section">
+      {activeView === "advisor" ? <main className="content-grid">
+        <section className="panel panel-main panel-full" id="advisor-section">
           <p className="eyebrow">Advisor Review</p>
           <h2>Mentor snapshot</h2>
           <form className="entry-form inline-form" onSubmit={handleAdvisorSubmit}>
@@ -1787,7 +1837,9 @@ export default function App() {
             </article>
           </div>
         </section>
+      </main> : null}
 
+      {activeView === "summary" ? <main className="content-grid">
         <section className="panel print-panel panel-full" id="summary-section">
           <div className="section-row">
             <div>
@@ -1856,8 +1908,7 @@ export default function App() {
             </div>
           </div>
         </section>
-      </main>
-
+      </main> : null}
     </div>
   );
 }
