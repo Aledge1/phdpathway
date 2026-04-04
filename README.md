@@ -78,9 +78,9 @@ It includes:
 
 This line was added to verify Git-based Vercel redeploys from the `main` branch.
 
-## Cloud save setup
+## Account-based cloud save setup
 
-The React app now includes a Supabase-based cloud save panel.
+The React app now includes Supabase-based user accounts plus per-user planner sync.
 
 Add these environment variables to the `react-app` deployment environment:
 
@@ -118,4 +118,10 @@ for update
 using (auth.uid() = user_id);
 ```
 
-For authentication, enable email magic links in Supabase Auth and set the site URL / redirect URL to your deployed Vercel domain.
+For authentication:
+
+1. Enable `Email` auth in Supabase.
+2. If you want the in-app email/password flow to work without email delivery, turn off `Confirm email`.
+3. Set the site URL to your deployed Vercel domain.
+
+Each signed-in user now saves to their own `planner_states.user_id` row, so multiple people can use the same deployed app without sharing planner data.

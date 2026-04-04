@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cloudEnabled, supabase } from "./lib/supabase";
 
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
@@ -184,6 +185,15 @@ function normalizePlannerState(parsed) {
 function readState() {
   try {
     const parsed = JSON.parse(localStorage.getItem(storageKey));
+    return normalizePlannerState(parsed);
+  } catch {
+    return defaultState;
+  }
+}
+
+function readStateForKey(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key));
     return normalizePlannerState(parsed);
   } catch {
     return defaultState;
@@ -455,14 +465,33 @@ function statusClass(value) {
   return value.replace(/\s+/g, "-");
 }
 
+function formatAuthError(error) {
+  const message = error?.message || "Something went wrong.";
+  const lowered = message.toLowerCase();
+  if (lowered.includes("invalid login credentials")) return "That email/password combination did not work.";
+  if (lowered.includes("email not confirmed")) return "Email confirmation is still enabled in Supabase. Disable it or confirm this account first.";
+  if (lowered.includes("user already registered")) return "That account already exists. Try signing in instead.";
+  return message;
+}
+
 export default function App() {
-  const [planner, setPlanner] = useState(readState);
-  const [selectedProgramId, setSelectedProgramId] = useState(readState().programs[0]?.id || null);
+  const [planner, setPlanner] = useState(() => (cloudEnabled ? defaultState : readState()));
+  const [selectedProgramId, setSelectedProgramId] = useState(
+    () => (cloudEnabled ? defaultState.programs[0]?.id || null : readState().programs[0]?.id || null)
+  );
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("All");
   const [activeStatus, setActiveStatus] = useState("all");
   const [sortMode, setSortMode] = useState("deadline");
   const [autofillBusy, setAutofillBusy] = useState(false);
+  const [authMode, setAuthMode] = useState("signin");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authUser, setAuthUser] = useState(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [cloudSyncState, setCloudSyncState] = useState("idle");
+  const [lastCloudSync, setLastCloudSync] = useState("");
   const [compareIds, setCompareIds] = useState([]);
 
   const [programForm, setProgramForm] = useState({
@@ -493,11 +522,14 @@ export default function App() {
   const [lastExportSignature, setLastExportSignature] = useState(() => localStorage.getItem(backupSignatureKey) || "");
   const [lastAutosavedAt, setLastAutosavedAt] = useState(() => localStorage.getItem(autosaveStampKey) || "");
   const [saveState, setSaveState] = useState("saved");
+  const [accountHydrated, setAccountHydrated] = useState(!cloudEnabled);
+  const hydrationLoadedRef = useRef(false);
+  const localCacheKey = authUser ? `${storageKey}:${authUser.id}` : storageKey;
 
   useEffect(() => {
     setSaveState("saving");
     const timeoutId = window.setTimeout(() => {
-      localStorage.setItem(storageKey, JSON.stringify(planner));
+      localStorage.setItem(localCacheKey, JSON.stringify(planner));
       const stamp = new Date().toISOString();
       localStorage.setItem(autosaveStampKey, stamp);
       setLastAutosavedAt(stamp);
@@ -505,11 +537,115 @@ export default function App() {
     }, 450);
     document.body.dataset.theme = planner.theme;
     return () => window.clearTimeout(timeoutId);
-  }, [planner]);
+  }, [localCacheKey, planner]);
 
   useEffect(() => {
     setAdvisorForm(planner.advisor);
   }, [planner.advisor]);
+
+  useEffect(() => {
+    if (!cloudEnabled || !supabase) return undefined;
+
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setAuthUser(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cloudEnabled || !supabase) return undefined;
+
+    let cancelled = false;
+
+    async function hydrateAccountPlanner() {
+      if (!authUser) {
+        hydrationLoadedRef.current = false;
+        setAccountHydrated(true);
+        setCloudSyncState("idle");
+        setLastCloudSync("");
+        setPlanner(defaultState);
+        setSelectedProgramId(defaultState.programs[0]?.id || null);
+        return;
+      }
+
+      setAccountHydrated(false);
+      setAuthMessage("Loading your planner...");
+      const localState = readStateForKey(`${storageKey}:${authUser.id}`);
+      if (!cancelled) {
+        setPlanner(localState);
+        setSelectedProgramId(localState.programs[0]?.id || null);
+      }
+
+      const { data, error } = await supabase
+        .from("planner_states")
+        .select("state, updated_at")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        setAuthMessage(`Loaded local account data. Cloud sync issue: ${error.message}`);
+      } else if (data?.state) {
+        const normalized = normalizePlannerState(data.state);
+        setPlanner(normalized);
+        setSelectedProgramId(normalized.programs[0]?.id || null);
+        if (data.updated_at) setLastCloudSync(data.updated_at);
+        setAuthMessage(`Signed in as ${authUser.email}.`);
+      } else {
+        setAuthMessage(`Signed in as ${authUser.email}. No cloud planner found yet, so this account starts fresh.`);
+        setPlanner(localState);
+        setSelectedProgramId(localState.programs[0]?.id || null);
+      }
+
+      hydrationLoadedRef.current = true;
+      setAccountHydrated(true);
+    }
+
+    hydrateAccountPlanner();
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!cloudEnabled || !supabase || !authUser || !accountHydrated || !hydrationLoadedRef.current) return undefined;
+
+    setCloudSyncState("syncing");
+    const timeoutId = window.setTimeout(async () => {
+      const { error } = await supabase.from("planner_states").upsert(
+        {
+          user_id: authUser.id,
+          state: planner,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (error) {
+        setCloudSyncState("error");
+        setAuthMessage(`Signed in as ${authUser.email}. Cloud sync issue: ${error.message}`);
+      } else {
+        const stamp = new Date().toISOString();
+        setCloudSyncState("synced");
+        setLastCloudSync(stamp);
+      }
+    }, 1200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [accountHydrated, authUser, planner]);
 
   const allTags = ["All", ...new Set(planner.programs.flatMap((program) => program.tags))];
   const filteredPrograms = planner.programs
@@ -568,6 +704,41 @@ export default function App() {
       setCompareIds((currentCompareIds) => currentCompareIds.filter((id) => next.programs.some((program) => program.id === id)));
       return next;
     });
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    if (!cloudEnabled || !supabase || !authEmail.trim() || !authPassword.trim()) return;
+    setAuthBusy(true);
+    setAuthMessage("");
+    const email = authEmail.trim().toLowerCase();
+
+    try {
+      const response =
+        authMode === "signup"
+          ? await supabase.auth.signUp({ email, password: authPassword })
+          : await supabase.auth.signInWithPassword({ email, password: authPassword });
+
+      if (response.error) {
+        setAuthMessage(formatAuthError(response.error));
+      } else if (authMode === "signup" && !response.data.session) {
+        setAuthMessage("Account created. If Supabase still requires email confirmation, disable that setting or confirm this account first.");
+      } else {
+        setAuthMessage(`${authMode === "signup" ? "Account created" : "Signed in"} for ${email}.`);
+        setAuthPassword("");
+      }
+    } catch (error) {
+      setAuthMessage(formatAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function signOutAccount() {
+    if (!cloudEnabled || !supabase) return;
+    await supabase.auth.signOut();
+    setAuthPassword("");
+    setAuthMessage("Signed out. This browser is back to a blank planner until someone signs in.");
   }
 
   function resetProgramForm() {
@@ -914,6 +1085,77 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {cloudEnabled ? (
+          <div className="account-card">
+            <div className="section-row">
+              <div>
+                <p className="eyebrow">Accounts</p>
+                <h3>{authUser ? "Private planner account connected" : "Sign in for your own planner"}</h3>
+              </div>
+              <span className={`pill ${authUser ? "" : "status not-started"}`}>
+                {authUser ? "Private data active" : "Account required for private planners"}
+              </span>
+            </div>
+            {authUser ? (
+              <div className="account-summary">
+                <p>{authUser.email}</p>
+                <p>
+                  {cloudSyncState === "syncing"
+                    ? "Syncing your planner..."
+                    : lastCloudSync
+                      ? `Last cloud sync: ${formatSavedAt(lastCloudSync)}`
+                      : "Cloud sync will begin after your first account change."}
+                </p>
+                <div className="button-row">
+                  <button className="button secondary" type="button" onClick={signOutAccount}>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form className="account-form" onSubmit={handleAuthSubmit}>
+                <div className="account-toggle">
+                  <button
+                    className={`button tiny ${authMode === "signin" ? "primary" : "secondary"}`}
+                    type="button"
+                    onClick={() => setAuthMode("signin")}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    className={`button tiny ${authMode === "signup" ? "primary" : "secondary"}`}
+                    type="button"
+                    onClick={() => setAuthMode("signup")}
+                  >
+                    Create account
+                  </button>
+                </div>
+                <div className="account-fields">
+                  <label className="field">
+                    <span>Email</span>
+                    <input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} />
+                  </label>
+                  <label className="field">
+                    <span>Password</span>
+                    <input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} />
+                  </label>
+                </div>
+                <div className="button-row">
+                  <button className="button primary" type="submit" disabled={authBusy}>
+                    {authBusy ? "Working..." : authMode === "signup" ? "Create account" : "Sign in"}
+                  </button>
+                </div>
+              </form>
+            )}
+            <p className="helper-text">
+              {authUser
+                ? "This planner now belongs to the signed-in account, so different users won’t see each other’s saved data."
+                : "Use an account to keep each person’s planner separate. Sign out on shared devices when you are done."}
+            </p>
+            {authMessage ? <p className="cloud-message">{authMessage}</p> : null}
+          </div>
+        ) : null}
 
         <div className="controls-grid">
           <label className="field wide">
