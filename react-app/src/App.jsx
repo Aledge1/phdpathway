@@ -883,7 +883,7 @@ export default function App() {
             <p className="eyebrow">Control Center</p>
             <h2>Search, sort, filter, and back up your data.</h2>
           </div>
-          <div className="button-row">
+          <div className="button-row controls-actions">
             <button className="button secondary" type="button" onClick={exportData}>
               Export
             </button>
@@ -1003,7 +1003,7 @@ export default function App() {
       </section>
 
       <main className="content-grid">
-        <section className="panel">
+        <section className="panel panel-primary">
           <div className="section-row">
             <div>
               <p className="eyebrow">Program Organizer</p>
@@ -1058,7 +1058,7 @@ export default function App() {
           </div>
         </section>
 
-        <aside className="panel">
+        <aside className="panel panel-sidebar">
           <div className="section-row">
             <div>
               <p className="eyebrow">Program Detail</p>
@@ -1174,7 +1174,7 @@ export default function App() {
           </div>
         </aside>
 
-        <section className="panel">
+        <section className="panel panel-full">
           <div className="section-row">
             <div>
               <p className="eyebrow">Compare View</p>
@@ -1210,7 +1210,7 @@ export default function App() {
           )}
         </section>
 
-        <section className="panel">
+        <section className="panel panel-main">
           <div className="section-row">
             <div>
               <p className="eyebrow">Checklist</p>
@@ -1274,7 +1274,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel panel-side">
           <p className="eyebrow">Documents</p>
           <h2>Core materials</h2>
           <div className="stack">
@@ -1309,7 +1309,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel panel-side">
           <p className="eyebrow">Recommendations</p>
           <h2>Letter writer tracker</h2>
           <div className="stack">
@@ -1344,7 +1344,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel panel-main">
           <p className="eyebrow">Advisor Review</p>
           <h2>Mentor snapshot</h2>
           <article className="card">
@@ -1366,7 +1366,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel print-panel">
+        <section className="panel print-panel panel-full">
           <div className="section-row">
             <div>
               <p className="eyebrow">Summary View</p>

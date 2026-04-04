@@ -114,7 +114,8 @@ select {
 }
 
 .content-grid {
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
 }
 
 .forms-grid {
@@ -526,6 +527,10 @@ textarea {
   justify-content: flex-end;
 }
 
+.controls-actions {
+  justify-content: flex-end;
+}
+
 .next-steps {
   margin-top: 1rem;
 }
@@ -555,6 +560,67 @@ textarea {
 
 .compare-card {
   min-height: 100%;
+}
+
+.panel-primary {
+  grid-column: span 7;
+}
+
+.panel-sidebar {
+  grid-column: span 5;
+  position: sticky;
+  top: 1rem;
+}
+
+.panel-main {
+  grid-column: span 7;
+}
+
+.panel-side {
+  grid-column: span 5;
+}
+
+.panel-full {
+  grid-column: 1 / -1;
+}
+
+.section-block + .section-block {
+  margin-top: 1.4rem;
+}
+
+.detail-card,
+.compare-card,
+.print-program,
+.program-card {
+  height: 100%;
+}
+
+.controls-panel .section-row {
+  align-items: center;
+}
+
+.controls-panel .button-row,
+.compare-row {
+  row-gap: 0.55rem;
+}
+
+.compare-card .section-row {
+  align-items: center;
+}
+
+.compare-card .detail-list li,
+.detail-card .detail-list li {
+  margin-bottom: 0.35rem;
+}
+
+.detail-card > p {
+  margin-top: 0.9rem;
+}
+
+.calendar-card,
+.print-program,
+.compare-card {
+  padding: 1.1rem;
 }
 
 .backup-notes {
@@ -654,6 +720,18 @@ textarea {
   .compare-grid {
     grid-template-columns: 1fr;
   }
+
+  .panel-primary,
+  .panel-sidebar,
+  .panel-main,
+  .panel-side,
+  .panel-full {
+    grid-column: 1 / -1;
+  }
+
+  .panel-sidebar {
+    position: static;
+  }
 }
 
 @media (max-width: 720px) {
@@ -686,6 +764,10 @@ textarea {
   .inline-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .controls-actions {
+    justify-content: stretch;
   }
 
   .button-row.right,
