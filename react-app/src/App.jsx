@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
 const backupStampKey = "phd-pathway-react-last-export";
+const backupSignatureKey = "phd-pathway-react-last-export-signature";
 
 const defaultPrograms = [
   {
@@ -374,6 +375,7 @@ export default function App() {
   const [recommenderForm, setRecommenderForm] = useState({ id: "", name: "", status: "not-asked", notes: "" });
   const [advisorForm, setAdvisorForm] = useState(planner.advisor);
   const [lastExportedAt, setLastExportedAt] = useState(() => localStorage.getItem(backupStampKey) || "");
+  const [lastExportSignature, setLastExportSignature] = useState(() => localStorage.getItem(backupSignatureKey) || "");
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(planner));
@@ -410,6 +412,8 @@ export default function App() {
   const progress = checklistItems.length
     ? Math.round((checklistItems.filter((item) => item.done).length / checklistItems.length) * 100)
     : 0;
+  const plannerSnapshot = JSON.stringify(planner);
+  const needsExportReminder = plannerSnapshot !== lastExportSignature;
 
   const dashboard = {
     programs: planner.programs.length,
@@ -571,7 +575,9 @@ export default function App() {
     URL.revokeObjectURL(url);
     const stamp = new Date().toLocaleString();
     localStorage.setItem(backupStampKey, stamp);
+    localStorage.setItem(backupSignatureKey, plannerSnapshot);
     setLastExportedAt(stamp);
+    setLastExportSignature(plannerSnapshot);
   }
 
   function importData(event) {
@@ -585,8 +591,11 @@ export default function App() {
         setPlanner(normalized);
         setSelectedProgramId(normalized.programs?.[0]?.id || null);
         const stamp = new Date().toLocaleString();
+        const importedSnapshot = JSON.stringify(normalized);
         localStorage.setItem(backupStampKey, stamp);
+        localStorage.setItem(backupSignatureKey, importedSnapshot);
         setLastExportedAt(stamp);
+        setLastExportSignature(importedSnapshot);
       } catch {
         window.alert("That file could not be imported.");
       }
@@ -783,7 +792,12 @@ export default function App() {
 
         <div className="backup-card">
           <div>
-            <p className="eyebrow">Local Backup</p>
+            <div className="section-row">
+              <div>
+                <p className="eyebrow">Local Backup</p>
+              </div>
+              {needsExportReminder ? <span className="pill reminder">Export reminder</span> : null}
+            </div>
             <h3>Keep a fresh export while cloud sync is paused.</h3>
             <p className="helper-text">
               {lastExportedAt
@@ -792,7 +806,11 @@ export default function App() {
             </p>
           </div>
           <div className="backup-notes">
-            <p>Export after big edits or once a week so you always have a restorable copy.</p>
+            <p>
+              {needsExportReminder
+                ? "You have changes that are not included in your latest backup file yet."
+                : "Your current planner matches the latest backup activity in this browser."}
+            </p>
             <p>Import that file anytime to restore your planner on this device or another one.</p>
           </div>
         </div>

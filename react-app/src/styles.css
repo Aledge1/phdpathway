@@ -389,6 +389,11 @@ textarea {
   color: #8a5e17;
 }
 
+.pill.reminder {
+  background: rgba(198, 138, 43, 0.18);
+  color: #8a5e17;
+}
+
 .pill.source {
   background: rgba(76, 78, 184, 0.14);
   color: #3940a2;
