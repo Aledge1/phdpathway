@@ -536,6 +536,10 @@ textarea {
   justify-content: flex-end;
 }
 
+.controls-panel {
+  padding-bottom: 1.9rem;
+}
+
 .next-steps {
   margin-top: 1.3rem;
 }
@@ -553,6 +557,7 @@ textarea {
 
 .compare-toolbar {
   margin-top: 1.35rem;
+  margin-bottom: 0.8rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -615,6 +620,10 @@ textarea {
 .controls-panel .button-row,
 .compare-row {
   row-gap: 0.55rem;
+}
+
+.controls-panel + .content-grid {
+  margin-top: 0.5rem;
 }
 
 .compare-card .section-row {
