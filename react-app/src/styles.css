@@ -100,7 +100,9 @@ select {
 .forms-grid,
 .controls-grid,
 .stats-grid,
-.cloud-grid {
+.cloud-grid,
+.calendar-grid,
+.print-summary-grid {
   display: grid;
   gap: 1rem;
 }
@@ -129,6 +131,15 @@ select {
 
 .stats-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.calendar-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.print-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .hero-copy,
@@ -467,6 +478,23 @@ textarea {
   align-items: center;
 }
 
+.calendar-card h4 {
+  margin-bottom: 0.8rem;
+  font-size: 1rem;
+}
+
+.calendar-item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.calendar-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .checklist-card.done .task-row {
   opacity: 0.65;
 }
@@ -509,6 +537,37 @@ textarea {
   gap: 0.65rem;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.autosave-text {
+  margin-top: 0.45rem;
+}
+
+.print-panel {
+  margin-bottom: 1rem;
+}
+
+.print-sheet {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.print-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.print-program {
+  min-height: 100%;
 }
 
 .forms-panel {
@@ -564,7 +623,9 @@ textarea {
   .controls-grid,
   .stats-grid,
   .cloud-grid,
-  .backup-card {
+  .backup-card,
+  .calendar-grid,
+  .print-summary-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -592,6 +653,7 @@ textarea {
   .row,
   .hero-row,
   .timeline-card,
+  .print-header,
   .source-row,
   .form-grid,
   .inline-actions {
@@ -606,5 +668,54 @@ textarea {
 
   h1 {
     max-width: none;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  body::before,
+  .hero,
+  .controls-panel,
+  .forms-panel,
+  .panel:not(.print-panel) {
+    display: none !important;
+  }
+
+  .page-shell {
+    width: 100%;
+    padding: 0;
+  }
+
+  .print-panel,
+  .print-sheet,
+  .print-summary-grid,
+  .print-program {
+    display: block !important;
+    box-shadow: none;
+    border: 0;
+    background: white;
+  }
+
+  .print-panel .button,
+  .print-panel .eyebrow {
+    display: none !important;
+  }
+
+  .print-program {
+    break-inside: avoid;
+    padding: 0;
+    margin: 0 0 1rem;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+  }
+
+  .pill {
+    border: 1px solid #bbb;
+    background: white !important;
+    color: black !important;
   }
 }

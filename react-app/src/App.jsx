@@ -4,6 +4,7 @@ const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
 const backupStampKey = "phd-pathway-react-last-export";
 const backupSignatureKey = "phd-pathway-react-last-export-signature";
+const autosaveStampKey = "phd-pathway-react-last-autosave";
 
 const defaultPrograms = [
   {
@@ -231,6 +232,12 @@ function firstMatch(text, patterns) {
 
 function extractField(text) {
   const fields = [
+    "Data Science",
+    "Public Health",
+    "Neuroscience",
+    "Statistics",
+    "Education",
+    "Philosophy",
     "Electrical Engineering",
     "Mechanical Engineering",
     "Computer Science",
@@ -257,13 +264,18 @@ function extractFieldFromTitle(text) {
 function extractDeadline(text) {
   const patterns = [
     /\b(20\d{2}-\d{2}-\d{2})\b/,
-    /\b(?:deadline|apply by|application due)[:\s]+([A-Z][a-z]{2,8}\s+\d{1,2},?\s+20\d{2})/i,
+    /\b(?:deadline|apply by|application due|priority deadline|final deadline)[:\s]+([A-Z][a-z]{2,8}\s+\d{1,2},?\s+20\d{2})/i,
+    /\b(?:deadline|apply by|application due|priority deadline|final deadline)[:\s]+(\d{1,2}\/\d{1,2}\/20\d{2})/i,
     /\b([A-Z][a-z]{2,8}\s+\d{1,2},?\s+20\d{2})\b/
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (!match) continue;
     if (/^\d{4}-\d{2}-\d{2}$/.test(match[1])) return match[1];
+    if (/^\d{1,2}\/\d{1,2}\/20\d{2}$/.test(match[1])) {
+      const [month, day, year] = match[1].split("/");
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
     const parsed = new Date(match[1]);
     if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
   }
@@ -284,12 +296,20 @@ function extractFunding(text) {
   const line = text
     .split("\n")
     .map((entry) => entry.trim())
-    .find((entry) => /stipend|funding|fellowship|assistantship|tuition|financial support|full support/i.test(entry));
+    .find((entry) =>
+      /stipend|funding|fellowship|assistantship|tuition|financial support|full support|guaranteed funding|five-year funding|annual stipend/i.test(
+        entry
+      )
+    );
   return line ? line.slice(0, 140) : "";
 }
 
 function extractLocation(text) {
-  const patterns = [/\b([A-Z][a-z]+,\s?[A-Z]{2})\b/, /\bLocation[:\s]+([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s?[A-Z]{2})/i];
+  const patterns = [
+    /\b([A-Z][a-z]+,\s?[A-Z]{2})\b/,
+    /\bLocation[:\s]+([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s?[A-Z]{2})/i,
+    /\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s?(?:USA|United States|Canada|UK))\b/
+  ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) return match[1];
@@ -298,7 +318,9 @@ function extractLocation(text) {
 }
 
 function extractFaculty(text) {
-  const matches = [...text.matchAll(/\bProf\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?/g)].map((match) => match[0]);
+  const matches = [
+    ...text.matchAll(/\b(?:Prof\.?|Professor|Dr\.?)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}/g)
+  ].map((match) => match[0].replace(/\s+/g, " ").trim());
   return [...new Set(matches)].slice(0, 4);
 }
 
@@ -318,7 +340,7 @@ function extractFit(text) {
   const line = text
     .split("\n")
     .map((entry) => entry.trim())
-    .find((entry) => entry.length > 40 && /research|faculty|program|department|students/i.test(entry));
+    .find((entry) => entry.length > 40 && /research|faculty|program|department|students|training|curriculum/i.test(entry));
   return line ? line.slice(0, 220) : "";
 }
 
@@ -339,6 +361,49 @@ function extractSourceSummary(text) {
     .filter((entry) => /phd|doctor|program|department|research|funding|deadline|faculty/i.test(entry))
     .slice(0, 2)
     .map((entry) => entry.slice(0, 220));
+}
+
+function extractRequirements(text) {
+  const lines = text
+    .split("\n")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 30);
+  return lines
+    .filter((entry) => /statement|writing sample|gre|transcript|letters? of recommendation|cv|resume|application fee/i.test(entry))
+    .slice(0, 2)
+    .map((entry) => entry.slice(0, 180));
+}
+
+function extractProgramHighlights(text) {
+  const lines = text
+    .split("\n")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 35);
+  return lines
+    .filter((entry) => /research areas|areas of study|curriculum|training|cohort|placement|faculty interests/i.test(entry))
+    .slice(0, 2)
+    .map((entry) => entry.slice(0, 180));
+}
+
+function formatSavedAt(timestamp) {
+  if (!timestamp) return "";
+  return new Date(timestamp).toLocaleString();
+}
+
+function groupProgramsByMonth(programs) {
+  const buckets = new Map();
+  programs
+    .filter((program) => program.deadline)
+    .sort((left, right) => left.deadline.localeCompare(right.deadline))
+    .forEach((program) => {
+      const monthKey = new Date(`${program.deadline}T12:00:00`).toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric"
+      });
+      if (!buckets.has(monthKey)) buckets.set(monthKey, []);
+      buckets.get(monthKey).push(program);
+    });
+  return [...buckets.entries()];
 }
 
 function statusClass(value) {
@@ -376,10 +441,20 @@ export default function App() {
   const [advisorForm, setAdvisorForm] = useState(planner.advisor);
   const [lastExportedAt, setLastExportedAt] = useState(() => localStorage.getItem(backupStampKey) || "");
   const [lastExportSignature, setLastExportSignature] = useState(() => localStorage.getItem(backupSignatureKey) || "");
+  const [lastAutosavedAt, setLastAutosavedAt] = useState(() => localStorage.getItem(autosaveStampKey) || "");
+  const [saveState, setSaveState] = useState("saved");
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(planner));
+    setSaveState("saving");
+    const timeoutId = window.setTimeout(() => {
+      localStorage.setItem(storageKey, JSON.stringify(planner));
+      const stamp = new Date().toISOString();
+      localStorage.setItem(autosaveStampKey, stamp);
+      setLastAutosavedAt(stamp);
+      setSaveState("saved");
+    }, 450);
     document.body.dataset.theme = planner.theme;
+    return () => window.clearTimeout(timeoutId);
   }, [planner]);
 
   useEffect(() => {
@@ -414,6 +489,13 @@ export default function App() {
     : 0;
   const plannerSnapshot = JSON.stringify(planner);
   const needsExportReminder = plannerSnapshot !== lastExportSignature;
+  const monthlyDeadlines = groupProgramsByMonth(planner.programs);
+  const printPrograms = [...planner.programs].sort((left, right) => {
+    if (!left.deadline && !right.deadline) return left.school.localeCompare(right.school);
+    if (!left.deadline) return 1;
+    if (!right.deadline) return -1;
+    return left.deadline.localeCompare(right.deadline);
+  });
 
   const dashboard = {
     programs: planner.programs.length,
@@ -580,6 +662,10 @@ export default function App() {
     setLastExportSignature(plannerSnapshot);
   }
 
+  function printSummary() {
+    window.print();
+  }
+
   function importData(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -639,6 +725,12 @@ export default function App() {
     try {
       const result = await fetchProgramSource(url);
       const inferredSummary = extractSourceSummary(result.text);
+      const inferredRequirements = extractRequirements(result.text);
+      const inferredHighlights = extractProgramHighlights(result.text);
+      const combinedNotes = [extractNotes(result.text), ...inferredRequirements, ...inferredHighlights]
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(" ");
       setProgramForm((current) => ({
         ...current,
         sourceUrl: result.normalized,
@@ -650,8 +742,10 @@ export default function App() {
         tags: current.tags || extractTags(result.text).join(", "),
         faculty: current.faculty || extractFaculty(result.text).join(", "),
         fit: current.fit || extractFit(result.text),
-        notes: current.notes || extractNotes(result.text) || inferredSummary[0] || `Imported from ${result.normalized}`,
-        sourceSummary: current.sourceSummary?.length ? current.sourceSummary : inferredSummary
+        notes: current.notes || combinedNotes || inferredSummary[0] || `Imported from ${result.normalized}`,
+        sourceSummary: current.sourceSummary?.length
+          ? current.sourceSummary
+          : [...new Set([...inferredSummary, ...inferredRequirements, ...inferredHighlights])].slice(0, 4)
       }));
     } catch {
       window.alert("The app could not auto-fill from that link. You can still keep the URL and fill the rest manually.");
@@ -716,6 +810,9 @@ export default function App() {
           <div className="button-row">
             <button className="button secondary" type="button" onClick={exportData}>
               Export
+            </button>
+            <button className="button secondary" type="button" onClick={printSummary}>
+              Print summary
             </button>
             <label className="button secondary file-button">
               Import
@@ -803,6 +900,11 @@ export default function App() {
               {lastExportedAt
                 ? `Last backup activity: ${lastExportedAt}`
                 : "No backup file exported yet in this browser."}
+            </p>
+            <p className="helper-text autosave-text">
+              {saveState === "saving"
+                ? "Saving changes locally..."
+                : `Autosaved locally${lastAutosavedAt ? ` at ${formatSavedAt(lastAutosavedAt)}` : ""}.`}
             </p>
           </div>
           <div className="backup-notes">
@@ -944,6 +1046,31 @@ export default function App() {
                   </article>
                 ))}
             </div>
+          </div>
+
+          <div className="section-block">
+            <p className="eyebrow">Calendar</p>
+            <h3>Deadline calendar</h3>
+            {monthlyDeadlines.length ? (
+              <div className="calendar-grid">
+                {monthlyDeadlines.map(([month, programs]) => (
+                  <article key={month} className="card calendar-card">
+                    <h4>{month}</h4>
+                    <div className="stack">
+                      {programs.map((program) => (
+                        <div key={program.id} className="calendar-item">
+                          <strong>{formatDate(program.deadline)}</strong>
+                          <p>{program.school} • {program.field}</p>
+                          <span className={`pill status ${statusClass(program.status)}`}>{statusLabels[program.status]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Add deadlines to see a calendar view.</div>
+            )}
           </div>
         </aside>
 
@@ -1100,6 +1227,75 @@ export default function App() {
               <h3>Application strategy</h3>
               <p>Capture faculty overlap, document readiness, and recommendation status before ranking programs.</p>
             </article>
+          </div>
+        </section>
+
+        <section className="panel print-panel">
+          <div className="section-row">
+            <div>
+              <p className="eyebrow">Summary View</p>
+              <h2>Printable application snapshot</h2>
+            </div>
+            <button className="button secondary" type="button" onClick={printSummary}>
+              Print or save PDF
+            </button>
+          </div>
+          <div className="print-sheet">
+            <div className="print-header">
+              <div>
+                <h3>PhD Pathway Planner Summary</h3>
+                <p>Generated from your current shortlist, checklist, and application materials.</p>
+              </div>
+              <div className="print-meta">
+                <span className="pill">{planner.programs.length} programs</span>
+                <span className="pill">{progress}% checklist complete</span>
+              </div>
+            </div>
+            <div className="print-summary-grid">
+              <article className="card print-program">
+                <h3>Top open tasks</h3>
+                <div className="stack">
+                  {checklistItems
+                    .filter((task) => !task.done)
+                    .slice(0, 4)
+                    .map((task) => (
+                      <p key={task.id}>
+                        <strong>{task.title}</strong> • {task.priority}
+                      </p>
+                    ))}
+                </div>
+              </article>
+              <article className="card print-program">
+                <h3>Documents and letters</h3>
+                <div className="stack">
+                  {planner.documents.slice(0, 3).map((doc) => (
+                    <p key={doc.id}>
+                      <strong>{doc.name}</strong> • {documentLabels[doc.status]}
+                    </p>
+                  ))}
+                  {planner.recommenders.slice(0, 2).map((person) => (
+                    <p key={person.id}>
+                      <strong>{person.name}</strong> • {recommenderLabels[person.status]}
+                    </p>
+                  ))}
+                </div>
+              </article>
+            </div>
+            <div className="print-summary-grid">
+              {printPrograms.map((program) => (
+                <article key={program.id} className="card print-program">
+                  <div className="row">
+                    <div>
+                      <h3>{program.school}</h3>
+                      <p>{program.field}</p>
+                    </div>
+                    <span className={`pill status ${statusClass(program.status)}`}>{statusLabels[program.status]}</span>
+                  </div>
+                  <p>{program.location || "Location pending"} • {formatDate(program.deadline)}</p>
+                  <p>{program.fit || program.notes || "Add more program notes for this summary."}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       </main>
