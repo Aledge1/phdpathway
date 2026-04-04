@@ -488,6 +488,24 @@ textarea {
   margin-top: 1rem;
 }
 
+.backup-card {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(198, 138, 43, 0.08));
+}
+
+.backup-notes {
+  display: grid;
+  gap: 0.65rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .forms-panel {
   margin-top: 1rem;
 }
@@ -540,7 +558,8 @@ textarea {
   .forms-grid,
   .controls-grid,
   .stats-grid,
-  .cloud-grid {
+  .cloud-grid,
+  .backup-card {
     grid-template-columns: 1fr;
   }
 }

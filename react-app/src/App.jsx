@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { cloudEnabled, supabase } from "./lib/supabase";
 
 const storageKey = "phd-pathway-react-state";
 const today = new Date().toISOString().slice(0, 10);
-const cloudPaused = true;
+const backupStampKey = "phd-pathway-react-last-export";
 
 const defaultPrograms = [
   {
@@ -345,25 +344,6 @@ function statusClass(value) {
   return value.replace(/\s+/g, "-");
 }
 
-function formatCloudError(error, action) {
-  const message = error?.message || "Unknown cloud error.";
-  const lowered = message.toLowerCase();
-
-  if (lowered.includes("jwt") || lowered.includes("session")) {
-    return `Your cloud session expired while trying to ${action}. Sign in again, then retry.`;
-  }
-
-  if (lowered.includes("row-level security") || lowered.includes("permission denied")) {
-    return `Cloud ${action} is blocked by Supabase permissions. Re-run the planner_states RLS policies, then try again.`;
-  }
-
-  if (lowered.includes("invalid input syntax") || lowered.includes("uuid")) {
-    return `Cloud ${action} could not match this signed-in user correctly. Sign out, sign back in with the magic link, then retry.`;
-  }
-
-  return `Cloud ${action} failed: ${message}`;
-}
-
 export default function App() {
   const [planner, setPlanner] = useState(readState);
   const [selectedProgramId, setSelectedProgramId] = useState(readState().programs[0]?.id || null);
@@ -393,12 +373,7 @@ export default function App() {
   const [documentForm, setDocumentForm] = useState({ id: "", name: "", status: "not-started", notes: "" });
   const [recommenderForm, setRecommenderForm] = useState({ id: "", name: "", status: "not-asked", notes: "" });
   const [advisorForm, setAdvisorForm] = useState(planner.advisor);
-  const [cloudEmail, setCloudEmail] = useState("");
-  const [cloudUser, setCloudUser] = useState(null);
-  const [cloudMessage, setCloudMessage] = useState("");
-  const [cloudBusy, setCloudBusy] = useState(false);
-  const [lastCloudSync, setLastCloudSync] = useState("");
-  const cloudAvailable = cloudEnabled && !cloudPaused;
+  const [lastExportedAt, setLastExportedAt] = useState(() => localStorage.getItem(backupStampKey) || "");
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(planner));
@@ -408,27 +383,6 @@ export default function App() {
   useEffect(() => {
     setAdvisorForm(planner.advisor);
   }, [planner.advisor]);
-
-  useEffect(() => {
-    if (!cloudEnabled || !supabase || cloudPaused) return undefined;
-
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setCloudUser(data.session?.user ?? null);
-    });
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCloudUser(session?.user ?? null);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const allTags = ["All", ...new Set(planner.programs.flatMap((program) => program.tags))];
   const filteredPrograms = planner.programs
@@ -476,82 +430,6 @@ export default function App() {
       }
       return next;
     });
-  }
-
-  async function sendMagicLink() {
-    if (!cloudEnabled || !supabase || !cloudEmail.trim()) return;
-    const email = cloudEmail.trim().toLowerCase();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(email)) {
-      setCloudMessage("Enter a valid email address to receive the sign-in link.");
-      return;
-    }
-
-    setCloudBusy(true);
-    setCloudMessage("");
-    try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) {
-        setCloudMessage(formatCloudError(error, "sign-in"));
-      } else {
-        setCloudMessage("Check your email for the sign-in link.");
-      }
-    } catch (error) {
-      setCloudMessage(formatCloudError(error, "sign-in"));
-    }
-    setCloudBusy(false);
-  }
-
-  async function saveToCloud() {
-    if (!cloudEnabled || !supabase || !cloudUser) return;
-    setCloudBusy(true);
-    setCloudMessage("");
-    const payload = {
-      user_id: cloudUser.id,
-      state: planner,
-      updated_at: new Date().toISOString()
-    };
-    const { error } = await supabase.from("planner_states").upsert(payload, { onConflict: "user_id" });
-    if (error) {
-      setCloudMessage(formatCloudError(error, "save"));
-    } else {
-      const stamp = new Date().toLocaleString();
-      setLastCloudSync(stamp);
-      setCloudMessage(`Saved to cloud at ${stamp}.`);
-    }
-    setCloudBusy(false);
-  }
-
-  async function loadFromCloud() {
-    if (!cloudEnabled || !supabase || !cloudUser) return;
-    setCloudBusy(true);
-    setCloudMessage("");
-    const { data, error } = await supabase
-      .from("planner_states")
-      .select("state, updated_at")
-      .eq("user_id", cloudUser.id)
-      .maybeSingle();
-    if (error) {
-      setCloudMessage(formatCloudError(error, "load"));
-    } else if (data?.state) {
-      const normalized = normalizePlannerState(data.state);
-      setPlanner(normalized);
-      setSelectedProgramId(normalized.programs?.[0]?.id || null);
-      if (data.updated_at) {
-        setLastCloudSync(new Date(data.updated_at).toLocaleString());
-      }
-      setCloudMessage("Loaded your planner from the cloud.");
-    } else {
-      setCloudMessage("No cloud save found yet for this account. Click Save to cloud first, then try loading again.");
-    }
-    setCloudBusy(false);
-  }
-
-  async function signOutCloud() {
-    if (!cloudEnabled || !supabase) return;
-    await supabase.auth.signOut();
-    setCloudMessage("Signed out of cloud save.");
   }
 
   function resetProgramForm() {
@@ -691,6 +569,9 @@ export default function App() {
     anchor.download = "phd-pathway-react-data.json";
     anchor.click();
     URL.revokeObjectURL(url);
+    const stamp = new Date().toLocaleString();
+    localStorage.setItem(backupStampKey, stamp);
+    setLastExportedAt(stamp);
   }
 
   function importData(event) {
@@ -703,6 +584,9 @@ export default function App() {
         const normalized = normalizePlannerState(parsed);
         setPlanner(normalized);
         setSelectedProgramId(normalized.programs?.[0]?.id || null);
+        const stamp = new Date().toLocaleString();
+        localStorage.setItem(backupStampKey, stamp);
+        setLastExportedAt(stamp);
       } catch {
         window.alert("That file could not be imported.");
       }
@@ -814,79 +698,6 @@ export default function App() {
         </section>
       </header>
 
-      <section className="panel cloud-panel">
-        <div className="section-row">
-          <div>
-            <p className="eyebrow">Cloud Save</p>
-            <h2>Sync your planner across devices.</h2>
-          </div>
-          <span className={`pill ${cloudAvailable ? "" : "status not-started"}`}>
-            {cloudAvailable ? "Cloud save available" : "Local-only mode"}
-          </span>
-        </div>
-
-        {cloudAvailable ? (
-          <div className="cloud-grid">
-            <div className="card">
-              <h3>{cloudUser ? "Signed in" : "Sign in with email"}</h3>
-              <p>
-                {cloudUser
-                  ? `Cloud save is connected for ${cloudUser.email || "this account"}.`
-                  : "Send yourself a magic link to unlock cloud save and load your planner from anywhere."}
-              </p>
-              {!cloudUser ? (
-                <div className="inline-actions">
-                  <input
-                    type="email"
-                    value={cloudEmail}
-                    onChange={(event) => setCloudEmail(event.target.value)}
-                    placeholder="you@example.com"
-                  />
-                  <button className="button primary" type="button" onClick={sendMagicLink} disabled={cloudBusy}>
-                    {cloudBusy ? "Sending..." : "Send sign-in link"}
-                  </button>
-                </div>
-              ) : (
-                <div className="button-row">
-                  <button className="button primary" type="button" onClick={saveToCloud} disabled={cloudBusy}>
-                    {cloudBusy ? "Working..." : "Save to cloud"}
-                  </button>
-                  <button className="button secondary" type="button" onClick={loadFromCloud} disabled={cloudBusy}>
-                    Load from cloud
-                  </button>
-                  <button className="button secondary" type="button" onClick={signOutCloud}>
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <h3>Sync status</h3>
-              <p>
-                {lastCloudSync
-                  ? `Last successful cloud sync: ${lastCloudSync}`
-                  : "No cloud sync recorded yet in this browser session."}
-              </p>
-              <p>
-                Your full planner state is stored as one synced record per account, so loading restores programs,
-                tasks, documents, recommenders, and advisor notes together.
-              </p>
-              {cloudMessage ? <p className="cloud-message">{cloudMessage}</p> : null}
-            </div>
-          </div>
-        ) : (
-          <div className="card">
-            <h3>Cloud save is paused</h3>
-            <p>
-              Your planner still works normally in this browser. Use Export to save a backup file and Import to
-              restore it later or move it to another device.
-            </p>
-            <p>We can turn cloud sync back on later once the email delivery setup is ready.</p>
-          </div>
-        )}
-      </section>
-
       <section className="panel controls-panel" id="programs">
         <div className="section-row">
           <div>
@@ -968,6 +779,22 @@ export default function App() {
               {tag}
             </button>
           ))}
+        </div>
+
+        <div className="backup-card">
+          <div>
+            <p className="eyebrow">Local Backup</p>
+            <h3>Keep a fresh export while cloud sync is paused.</h3>
+            <p className="helper-text">
+              {lastExportedAt
+                ? `Last backup activity: ${lastExportedAt}`
+                : "No backup file exported yet in this browser."}
+            </p>
+          </div>
+          <div className="backup-notes">
+            <p>Export after big edits or once a week so you always have a restorable copy.</p>
+            <p>Import that file anytime to restore your planner on this device or another one.</p>
+          </div>
         </div>
       </section>
 
