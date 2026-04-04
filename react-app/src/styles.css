@@ -1,28 +1,28 @@
 :root {
-  --bg: #f3efe6;
-  --bg-strong: #fbf8f1;
-  --panel: rgba(255, 252, 246, 0.92);
-  --panel-strong: #fffdf8;
-  --ink: #1f2a2c;
-  --muted: #5d6867;
-  --line: rgba(31, 42, 44, 0.12);
-  --accent: #0f766e;
-  --accent-strong: #14532d;
-  --accent-soft: #d6f2ea;
-  --gold: #c68a2b;
-  --shadow: 0 24px 60px rgba(65, 50, 30, 0.12);
+  --bg: #efe5d4;
+  --bg-strong: #fbf4e9;
+  --panel: rgba(255, 249, 240, 0.9);
+  --panel-strong: #fffaf2;
+  --ink: #1f2d2a;
+  --muted: #5c6967;
+  --line: rgba(31, 45, 42, 0.1);
+  --accent: #176b63;
+  --accent-strong: #103934;
+  --accent-soft: rgba(23, 107, 99, 0.12);
+  --gold: #b87928;
+  --shadow: 0 30px 80px rgba(78, 55, 24, 0.14);
 }
 
 body[data-theme="dark"] {
-  --bg: #11171a;
-  --bg-strong: #162025;
-  --panel: rgba(20, 29, 33, 0.92);
-  --panel-strong: #1a252a;
+  --bg: #101718;
+  --bg-strong: #162022;
+  --panel: rgba(20, 30, 32, 0.9);
+  --panel-strong: #1b272a;
   --ink: #edf3f3;
   --muted: #b1c0c0;
   --line: rgba(237, 243, 243, 0.12);
-  --accent-soft: rgba(15, 118, 110, 0.18);
-  --shadow: 0 26px 60px rgba(0, 0, 0, 0.28);
+  --accent-soft: rgba(23, 107, 99, 0.2);
+  --shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -35,11 +35,12 @@ html {
 
 body {
   margin: 0;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(198, 138, 43, 0.12), transparent 30%),
-    radial-gradient(circle at right 20%, rgba(15, 118, 110, 0.12), transparent 26%),
+    radial-gradient(circle at top left, rgba(184, 121, 40, 0.18), transparent 28%),
+    radial-gradient(circle at right 20%, rgba(23, 107, 99, 0.16), transparent 25%),
+    radial-gradient(circle at 24% 78%, rgba(184, 121, 40, 0.08), transparent 18%),
     linear-gradient(180deg, var(--bg-strong) 0%, var(--bg) 100%);
 }
 
@@ -68,7 +69,7 @@ p {
 
 h1,
 h2 {
-  font-family: Georgia, serif;
+  font-family: "Iowan Old Style", "Palatino Linotype", serif;
   font-weight: 400;
   line-height: 1.05;
 }
@@ -110,14 +111,14 @@ select {
   align-items: flex-start;
   padding: 1rem 1.1rem;
   border-radius: 24px;
-  background: rgba(255, 252, 246, 0.82);
+  background: linear-gradient(135deg, rgba(255, 249, 239, 0.88), rgba(246, 237, 225, 0.82));
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
 }
 
 body[data-theme="dark"] .site-nav {
-  background: rgba(20, 29, 33, 0.82);
+  background: linear-gradient(135deg, rgba(20, 30, 32, 0.92), rgba(27, 39, 42, 0.86));
 }
 
 .nav-pills {
@@ -134,6 +135,14 @@ body[data-theme="dark"] .site-nav {
   background: rgba(255, 255, 255, 0.58);
   color: var(--muted);
   cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.nav-pill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(23, 107, 99, 0.24);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink);
 }
 
 .nav-pill.active {
@@ -211,7 +220,7 @@ body[data-theme="dark"] .site-nav {
 .panel,
 .entry-form {
   background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 28px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px);
@@ -252,8 +261,8 @@ body[data-theme="dark"] .site-nav {
 
 .nav-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(15, 118, 110, 0.28);
-  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.08);
+  border-color: rgba(23, 107, 99, 0.28);
+  box-shadow: 0 16px 34px rgba(23, 107, 99, 0.1);
 }
 
 .nav-card p {
@@ -266,6 +275,16 @@ body[data-theme="dark"] .site-nav {
   overflow: hidden;
 }
 
+.hero-copy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 45%),
+    radial-gradient(circle at 20% 22%, rgba(184, 121, 40, 0.12), transparent 24%);
+  pointer-events: none;
+}
+
 .hero-copy::after {
   content: "";
   position: absolute;
@@ -274,7 +293,7 @@ body[data-theme="dark"] .site-nav {
   right: -80px;
   bottom: -90px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.18), rgba(198, 138, 43, 0.16));
+  background: linear-gradient(135deg, rgba(23, 107, 99, 0.24), rgba(184, 121, 40, 0.2));
 }
 
 .eyebrow {
@@ -356,11 +375,11 @@ body[data-theme="dark"] .site-nav {
   border: 0;
   color: white;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  box-shadow: 0 16px 34px rgba(15, 118, 110, 0.22);
+  box-shadow: 0 18px 38px rgba(23, 107, 99, 0.22);
 }
 
 .button.secondary {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.62);
   color: var(--ink);
 }
 
@@ -442,6 +461,26 @@ textarea {
   padding: 1rem;
 }
 
+.panel,
+.card,
+.entry-form,
+.nav-card,
+.site-nav {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::after,
+.card::after,
+.entry-form::after,
+.nav-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.18), transparent 36%);
+  pointer-events: none;
+}
+
 .stat-card span {
   display: block;
   margin-bottom: 0.25rem;
@@ -452,6 +491,7 @@ textarea {
 .stat-card strong {
   font-size: 1.9rem;
   font-weight: 800;
+  color: var(--accent-strong);
 }
 
 .progress-track {
@@ -476,7 +516,7 @@ textarea {
 
 .program-card.active {
   border-color: rgba(15, 118, 110, 0.34);
-  box-shadow: 0 18px 32px rgba(15, 118, 110, 0.1);
+  box-shadow: 0 20px 38px rgba(23, 107, 99, 0.14);
 }
 
 .right-stack {
@@ -639,7 +679,7 @@ textarea {
   padding: 1rem;
   border-radius: 22px;
   border: 1px solid rgba(15, 118, 110, 0.16);
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(198, 138, 43, 0.08));
+  background: linear-gradient(135deg, rgba(23, 107, 99, 0.08), rgba(184, 121, 40, 0.12));
 }
 
 .account-card {
@@ -647,7 +687,7 @@ textarea {
   padding: 1rem;
   border-radius: 22px;
   border: 1px solid rgba(15, 118, 110, 0.16);
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.07), rgba(255, 255, 255, 0.35));
+  background: linear-gradient(135deg, rgba(23, 107, 99, 0.08), rgba(255, 250, 242, 0.35));
 }
 
 .account-form,
