@@ -151,47 +151,47 @@ const defaultState = {
 const viewMeta = {
   home: {
     label: "Home",
-    icon: "◌",
+    icon: "HM",
     blurb: "See the whole application cycle at a glance and jump into the right workspace."
   },
   control: {
     label: "Control Center",
-    icon: "⌘",
+    icon: "CT",
     blurb: "Manage setup, backups, presets, filters, and account state."
   },
   programs: {
     label: "Program Organizer",
-    icon: "◆",
+    icon: "PO",
     blurb: "Add schools, autofill from links, and shape the shortlist."
   },
   compare: {
     label: "Compare View",
-    icon: "◫",
+    icon: "CV",
     blurb: "Review multiple programs side by side before you commit time."
   },
   checklist: {
     label: "Checklist",
-    icon: "✓",
+    icon: "CL",
     blurb: "Track tasks, priorities, and what still needs attention."
   },
   documents: {
     label: "Documents",
-    icon: "▤",
+    icon: "DC",
     blurb: "Keep CVs, statements, transcripts, and notes organized."
   },
   recommenders: {
     label: "Recommendations",
-    icon: "◎",
+    icon: "RC",
     blurb: "Track letter writers, follow-ups, and status updates."
   },
   advisor: {
     label: "Advisor Review",
-    icon: "△",
+    icon: "AR",
     blurb: "Keep strategy notes and mentoring conversations in one place."
   },
   summary: {
     label: "Summary View",
-    icon: "▣",
+    icon: "SV",
     blurb: "Print or review a clean advising snapshot when it is time to share."
   }
 };
@@ -1061,6 +1061,7 @@ export default function App() {
       <nav className="site-nav">
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true">
+            <span />
             <span />
             <span />
             <span />
